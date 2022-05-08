@@ -1,0 +1,20 @@
+{
+  "name": "parseq-extended",
+  "version": "1.0.0",
+  "description": "Better living thru eventuality!",
+  "main": "demo.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bunglegrind/parseq-extended.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bunglegrind/parseq-extended/issues"
+  },
+  "homepage": "https://github.com/bunglegrind/parseq-extended#readme",
+  "type": "module"
+}
