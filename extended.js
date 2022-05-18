@@ -5,12 +5,12 @@ function do_nothing(cb, v) {
 }
 
 function when(condition, requestor) {
-	return function (callback, value) {
-		if (condition(value)) {
-			return requestor(callback, value);
-		}
-		return callback(value); 
-	}
+    return function (callback, value) {
+        if (condition(value)) {
+            return requestor(callback, value);
+        }
+        return callback(value); 
+    }
 }
 
 function requestorize(unary) {
@@ -24,15 +24,15 @@ function requestorize(unary) {
 }
 
 function wrap_reason(requestor) {
-	return function (callback, value) {
-		return requestor(function (value, reason) {
-			return callback({value, reason});
-		}, value);
-	}
+    return function (callback, value) {
+        return requestor(function (value, reason) {
+            return callback({value, reason});
+        }, value);
+    }
 }
 
 export default Object.freeze({
-	...parseq,
+    ...parseq,
     wrap_reason,
     requestorize,
     do_nothing,
