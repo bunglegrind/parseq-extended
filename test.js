@@ -1,70 +1,63 @@
+/*jslint
+    node, unordered
+*/
+/*property
+    a, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
+    assign, b, c, constant, create, deep_equal, do_nothing, evidence, fallback,
+    isArray, keys, length, parallel, parallel_object, race, reason,
+    requestorize, same, sequence, toString, value, when, wrap_reason,
+    wrap_requestor
+*/
 import test from "./test_framework.js";
 import parseq_extended from "./extended.js";
 import parseq from "./parseq.js";
 
-
-function requestor_success(callback, value) {
-    callback("success");
-    return function cancel() {
-    };
-}
-
-function requestor_fail(callback, value) {
+function requestor_fail(callback) {
     callback(undefined, "failed");
-    return function cancel() {
-    };
 }
 
 test("parseq-extended should include parseq", function (assert) {
-    {
-        assert.same(
-            parseq_extended.sequence,
-            parseq.sequence,
-            "sequence should be in parseq extended"
-        );
-    }
-
-    {
-        assert.same(
-            parseq_extended.parallel,
-            parseq.parallel,
-            "parallel should be in parseq extended"
-        );
-    }
-    {
-        assert.same(
-            parseq_extended.fallback,
-            parseq.fallback,
-            "fallback should be in parseq extended"
-        );
-    }
-    {
-        assert.same(
-            parseq_extended.parallel_object,
-            parseq.parallel_object,
-            "parallel_object should be in parseq extended"
-        );
-    }
-    {
-        assert.same(
-            parseq_extended.race,
-            parseq.race,
-            "race should be in parseq extended"
-        );
-    }
-
+    assert.same(
+        parseq_extended.sequence,
+        parseq.sequence,
+        "sequence should be in parseq extended"
+    );
+    assert.same(
+        parseq_extended.parallel,
+        parseq.parallel,
+        "parallel should be in parseq extended"
+    );
+    assert.same(
+        parseq_extended.fallback,
+        parseq.fallback,
+        "fallback should be in parseq extended"
+    );
+    assert.same(
+        parseq_extended.parallel_object,
+        parseq.parallel_object,
+        "parallel_object should be in parseq extended"
+    );
+    assert.same(
+        parseq_extended.race,
+        parseq.race,
+        "race should be in parseq extended"
+    );
 });
 
-test("optional_parallel should forward reasons", function (assert) {
+test("wrap_reason should encapsulate reasons", function (assert) {
     parseq_extended.parallel(
         [parseq_extended.wrap_reason(requestor_fail)]
-    )(function (value, reason) {
+    )(function (value, ignore) {
         assert.same(Array.isArray(value), true, "value is array");
         assert.same(value.length, 1, "value is wun element array");
-        assert.same(typeof (value[0]), "object", "value element is an object");
+        assert.same(typeof value[0], "object", "value element is an object");
         const keys = Object.keys(value[0]);
         assert.same(keys.length, 2, "two keys in the return object");
-        assert.deep_equal(keys, ["value", "reason"], "value and reason are the value keys");
+        assert.deep_equal(
+            keys,
+            ["value", "reason"],
+            "value and reason are the value keys"
+        );
         assert.deep_equal(
             value[0],
             {value: undefined, reason: "failed"},
@@ -73,13 +66,13 @@ test("optional_parallel should forward reasons", function (assert) {
     });
 });
 
-test("constant must return a constant", function(assert) {
+test("constant must return a constant", function (assert) {
     parseq_extended.constant(5)(function (value, ignore) {
         assert.same(value, 5, "it should be five");
     });
 });
 
-test("do nothing just passes a value", function(assert) {
+test("do nothing just passes a value", function (assert) {
     parseq_extended.sequence([
         parseq_extended.constant(5),
         parseq_extended.do_nothing
@@ -90,7 +83,7 @@ test("do nothing just passes a value", function(assert) {
 
 test(
     "Requestorize transforms an unary function into a requestor",
-    function(assert) {
+    function (assert) {
         parseq_extended.sequence([
             parseq_extended.constant(5),
             parseq_extended.requestorize((x) => x + 1)
@@ -100,7 +93,7 @@ test(
     }
 );
 
-test("Map a requestor into an array", function(assert) {
+test("Map a requestor into an array", function (assert) {
     parseq_extended.sequence([
         parseq_extended.constant([1, 2, 3]),
         parseq_extended.when(
@@ -112,15 +105,11 @@ test("Map a requestor into an array", function(assert) {
             )
         )
     ])(function (value, ignore) {
-        assert.deep_equal(
-            value,
-            [2, 3, 4],
-            "it should be [2, 3, 4]"
-        );
+        assert.deep_equal(value, [2, 3, 4], "it should be [2, 3, 4]");
     });
 });
 
-test("Map a requestor into an object", function(assert) {
+test("Map a requestor into an object", function (assert) {
     parseq_extended.sequence([
         parseq_extended.constant({a: 1, b: 2, c: 3}),
         parseq_extended.when(
@@ -137,5 +126,66 @@ test("Map a requestor into an object", function(assert) {
             Object.assign(Object.create(null), {a: 2, b: 3, c: 4}),
             "it should be {a: 2, b: 3, c: 4}"
         );
+    });
+});
+
+test("Map an array to a fallback", function (assert) {
+    parseq_extended.sequence([
+        parseq_extended.constant([0, 1, 2]),
+        parseq_extended.apply_fallback(
+            parseq_extended.wrap_requestor(
+                parseq_extended.when((v) => v === 0, requestor_fail)
+            )
+        )
+    ])(function (value, ignore) {
+        assert.deep_equal(value, 1, "it should be 1");
+    });
+});
+
+test("Map timeouts to a race", function (assert) {
+    parseq_extended.sequence([
+        parseq_extended.constant([5000, 500, 10000]),
+        parseq_extended.apply_race(
+            function (t) {
+                return function (callback) {
+                    const cancel = setTimeout(
+                        () => callback(`success ${t}`),
+                        t
+                    );
+                    return function () {
+                        clearTimeout(cancel);
+                    };
+                };
+            }
+        )
+    ])(function (value, ignore) {
+        assert.same(value, "success 500", "timeout 500 should win");
+    });
+});
+test("Map timeouts to a failing race", function (assert) {
+    parseq_extended.sequence([
+        parseq_extended.constant([5000, 500, 10000]),
+        parseq_extended.apply_race(
+            function (t) {
+                return function (callback) {
+                    const cancel = setTimeout(
+                        () => callback(`success ${t}`),
+                        t
+                    );
+                    return function () {
+                        clearTimeout(cancel);
+                    };
+                };
+            },
+            100
+        )
+    ])(function (value, reason) {
+        assert.same(value, undefined, "nobody should win");
+        assert.same(
+            reason.toString(),
+            "Error: parseq.race: Timeout.",
+            "time_limit reached"
+        );
+        assert.same(reason.evidence, 100, "time_limit");
     });
 });

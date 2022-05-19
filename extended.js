@@ -1,3 +1,12 @@
+/*jslint
+    node, unordered
+*/
+/*property
+    apply_fallback, apply_parallel, apply_parallel_object, apply_race, constant,
+    create, do_nothing, fallback, forEach, freeze, keys, map, parallel,
+    parallel_object, race, reason, requestorize, value, when, wrap_reason,
+    wrap_requestor
+*/
 import parseq from "./parseq.js";
 
 function do_nothing(cb, v) {
@@ -7,7 +16,7 @@ function do_nothing(cb, v) {
 function constant(v) {
     return function requestor_constant(callback) {
         return callback(v);
-    }
+    };
 }
 
 function when(condition, requestor) {
@@ -16,7 +25,7 @@ function when(condition, requestor) {
             return requestor(callback, value);
         }
         return do_nothing(callback, value);
-    }
+    };
 }
 
 function requestorize(unary) {
@@ -26,7 +35,7 @@ function requestorize(unary) {
         } catch (exception) {
             return callback(undefined, exception);
         }
-    }
+    };
 }
 
 function wrap_reason(requestor) {
@@ -34,7 +43,7 @@ function wrap_reason(requestor) {
         return requestor(function (value, reason) {
             return callback({value, reason});
         }, value);
-    }
+    };
 }
 
 function apply_race(
@@ -52,7 +61,7 @@ function apply_race(
         } catch (e) {
             return callback(undefined, e);
         }
-    }
+    };
 }
 
 function apply_fallback(
@@ -68,7 +77,7 @@ function apply_fallback(
         } catch (e) {
             return callback(undefined, e);
         }
-    }
+    };
 }
 
 function apply_parallel(
@@ -83,7 +92,7 @@ function apply_parallel(
             return parseq.parallel(
                 value.map(requestor_factory),
                 (
-                    typeof optional_requestor === "function"
+                    typeof optional_requestor_factory === "function"
                     ? value.map(optional_requestor_factory)
                     : []
                 ),
@@ -94,15 +103,15 @@ function apply_parallel(
         } catch (e) {
             return callback(undefined, e);
         }
-    }
+    };
 }
 
 function wrap_requestor(requestor) {
     return function (value) {
         return function (callback) {
             return requestor(callback, value);
-        }
-    }
+        };
+    };
 }
 
 function apply_parallel_object(
@@ -129,7 +138,7 @@ function apply_parallel_object(
         } catch (e) {
             return callback(undefined, e);
         }
-    }
+    };
 }
 
 export default Object.freeze({
