@@ -15,7 +15,7 @@ function when(condition, requestor) {
         if (condition(value)) {
             return requestor(callback, value);
         }
-        return do_nothing(callback, value); 
+        return do_nothing(callback, value);
     }
 }
 
@@ -84,7 +84,7 @@ function apply_parallel(
                 value.map(requestor_factory),
                 (
                     typeof optional_requestor === "function"
-                    ? value.map(optional_requesto_factoryr)
+                    ? value.map(optional_requestor_factory)
                     : []
                 ),
                 time_limit,
@@ -97,15 +97,16 @@ function apply_parallel(
     }
 }
 
-function wrap_requestor(value, requestor) {
-    return function (callback) {
-        return requestor(callback, value);
+function wrap_requestor(requestor) {
+    return function (value) {
+        return function (callback) {
+            return requestor(callback, value);
+        }
     }
 }
 
 function apply_parallel_object(
     requestor_factory,
-    optional_requestor_factory,
     time_limit,
     time_option,
     throttle
@@ -113,15 +114,28 @@ function apply_parallel_object(
     return function (callback, value) {
         try {
             const keys = Object.keys(value);
+            const required_obj_requestor = Object.create(null);
+            keys.forEach(function (key) {
+                required_obj_requestor[key] = requestor_factory(value[key]);
+            });
+            return parseq.parallel_object(
+                required_obj_requestor,
+                undefined,
+                time_limit,
+                time_option,
+                throttle
+            )(callback);
 
         } catch (e) {
             return callback(undefined, e);
         }
     }
+}
 
 export default Object.freeze({
     ...parseq,
     wrap_reason,
+    constant,
     wrap_requestor,
     requestorize,
     do_nothing,
