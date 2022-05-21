@@ -3,7 +3,7 @@
 */
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, constant,
-    create, do_nothing, fallback, forEach, freeze, keys, map, parallel,
+    create, do_nothing, fallback, forEach, freeze, if_else, keys, map, parallel,
     parallel_object, race, reason, requestorize, value, when, wrap_reason,
     wrap_requestor
 */
@@ -19,13 +19,17 @@ function constant(v) {
     };
 }
 
-function when(condition, requestor) {
+function if_else(condition, requestor_if, requestor_else) {
     return function (callback, value) {
         if (condition(value)) {
-            return requestor(callback, value);
+            return requestor_if(callback, value);
         }
-        return do_nothing(callback, value);
+        return requestor_else(callback, value);
     };
+}
+
+function when(condition, requestor) {
+    return if_else(condition, requestor, do_nothing);
 }
 
 function requestorize(unary) {
@@ -149,6 +153,7 @@ export default Object.freeze({
     requestorize,
     do_nothing,
     when,
+    if_else,
     apply_race,
     apply_fallback,
     apply_parallel,
