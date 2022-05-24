@@ -9,7 +9,7 @@
     wrap_requestor
 */
 import test from "./test_framework.js";
-import parseq_extended from "./extended.js";
+import parseq_extended from "./parseq-extended.js";
 import parseq from "./parseq.js";
 
 function requestor_fail(callback) {

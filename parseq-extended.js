@@ -2,15 +2,21 @@
     node, unordered
 */
 /*property
-    apply_fallback, apply_parallel, apply_parallel_object, apply_race, constant,
-    create, do_nothing, fallback, forEach, freeze, if_else, keys, map, parallel,
-    parallel_object, race, reason, requestorize, value, when, wrap_reason,
-    wrap_requestor
+    apply_fallback, apply_parallel, apply_parallel_object, apply_race, catch,
+    constant, create, do_nothing, fallback, forEach, freeze, if_else, keys, map,
+    parallel, parallel_object, promise_requestorize, race, reason, requestorize,
+    then, value, when, wrap_reason, wrap_requestor
 */
 import parseq from "./parseq.js";
 
 function do_nothing(cb, v) {
     return cb(v);
+}
+
+function promise_requestorize(promise) {
+    return function (callback) {
+        promise.then(callback).catch((e) => callback(undefined, e));
+    };
 }
 
 function constant(v) {
@@ -151,6 +157,7 @@ export default Object.freeze({
     constant,
     wrap_requestor,
     requestorize,
+    promise_requestorize,
     do_nothing,
     when,
     if_else,
