@@ -4,9 +4,9 @@
 /*property
     a, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, b, c, constant, create, deep_equal, do_nothing, evidence, fallback,
-    isArray, keys, length, parallel, parallel_object, race, reason,
-    requestorize, same, sequence, toString, value, when, wrap_reason,
-    wrap_requestor
+    isArray, keys, length, parallel, parallel_object, promise_requestorize,
+    race, reason, requestorize, same, sequence, toString, value, when,
+    wrap_reason, wrap_requestor
 */
 import test from "./test_framework.js";
 import parseq_extended from "./parseq-extended.js";
@@ -162,6 +162,7 @@ test("Map timeouts to a race", function (assert) {
         assert.same(value, "success 500", "timeout 500 should win");
     });
 });
+
 test("Map timeouts to a failing race", function (assert) {
     parseq_extended.sequence([
         parseq_extended.constant([5000, 500, 10000]),
@@ -188,4 +189,24 @@ test("Map timeouts to a failing race", function (assert) {
         );
         assert.same(reason.evidence, 100, "time_limit");
     });
+});
+
+test("A promise becomes a requestor", function (assert) {
+    const a_little_promise = new Promise(function (resolve) {
+        setTimeout(() => resolve("success"));
+    });
+    parseq_extended.promise_requestorize(a_little_promise)(
+        function (value) {
+            assert.same(value, "success", "value should be success");
+        }
+    );
+    const another_little_promise = new Promise(function (ignore, reject) {
+        setTimeout(() => reject("failed"));
+    });
+    parseq_extended.promise_requestorize(another_little_promise)(
+        function (value, reason) {
+            assert.same(value, undefined, "value should be undefined");
+            assert.same(reason, "failed", "reason should be failed");
+        }
+    );
 });
