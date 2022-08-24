@@ -3,9 +3,10 @@
 */
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, catch,
-    constant, create, do_nothing, fallback, forEach, freeze, if_else, keys, map,
-    parallel, parallel_object, promise_requestorize, race, reason, requestorize,
-    then, value, when, wrap_reason, wrap_requestor
+    constant, create, do_nothing, fallback, forEach, freeze, if_else, keys,
+    make_requestor_factory, map, parallel, parallel_object,
+    promise_requestorize, race, reason, requestorize, then, value, when,
+    wrap_reason, wrap_requestor
 */
 import parseq from "./parseq.js";
 
@@ -151,12 +152,17 @@ function apply_parallel_object(
     };
 }
 
+function make_requestor_factory(unary) {
+    return wrap_requestor(requestorize(unary));
+}
+
 export default Object.freeze({
     ...parseq,
     wrap_reason,
     constant,
     wrap_requestor,
     requestorize,
+    make_requestor_factory,
     promise_requestorize,
     do_nothing,
     when,
