@@ -14,11 +14,6 @@ function do_nothing(cb, v) {
     return cb(v);
 }
 
-function promise_requestorize(promise) {
-    return function (callback) {
-        promise.then(callback).catch((e) => callback(undefined, e));
-    };
-}
 
 function constant(v) {
     return function requestor_constant(callback) {
@@ -156,6 +151,60 @@ function make_requestor_factory(unary) {
     return wrap_requestor(requestorize(unary));
 }
 
+function promise_requestorize(promise) {
+    return function (callback) {
+        let is_called = false;
+        function promise_callback(value, reason) {
+            if (!is_called) {
+                is_called = true;
+                return callback(value, reason);
+            }
+            throw new Error(`Callback failed when executing promise. Message: ${reason}`);
+        }
+        promise.then(promise_callback).catch((e) => {
+            promise_callback(undefined, e);
+        });
+    };
+}
+
+function dynamic_default_import(url) {
+    return function dynamic_import_requestor(callback) {
+        let is_called = false;
+        function promise_callback(value, reason) {
+            if (!is_called) {
+                is_called = true;
+                return callback(value, reason);
+            }
+            throw new Error(`Callback failed when executing ${url}. Message: ${reason}`);
+        }
+        import(url).then(function (module) {
+            promise_callback(module["default"]);
+        }).catch((e) => {
+            const err = new Error(`Error in importing ${url}. Message: ${e.message}`);
+            err.evidence = e;
+            promise_callback(undefined, err);
+        });
+    };
+}
+
+function dynamic_import(url) {
+    return function dynamic_import_requestor(callback) {
+        let is_called = false;
+        function promise_callback(value, reason) {
+            if (!is_called) {
+                is_called = true;
+                return callback(value, reason);
+            }
+            throw new Error(`Callback failed when executing ${url}. Message: ${reason}`);
+        }
+        import(url).then(promise_callback).catch((e) => {
+            const err = new Error(`Error in importing ${url}. Message: ${e.message}`);
+            err.evidence = e;
+            promise_callback(undefined, err);
+        });
+    };
+}
+
 export default Object.freeze({
     ...parseq,
     wrap_reason,
@@ -170,5 +219,7 @@ export default Object.freeze({
     apply_race,
     apply_fallback,
     apply_parallel,
-    apply_parallel_object
+    apply_parallel_object,
+    dynamic_default_import,
+    dynamic_import
 });
