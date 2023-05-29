@@ -151,7 +151,7 @@ function make_requestor_factory(unary) {
     return wrap_requestor(requestorize(unary));
 }
 
-function promise_requestorize(promise) {
+function promise_requestorize(promise, action = "executing promise") {
     return function (callback) {
         let is_called = false;
         function promise_callback(value, reason) {
@@ -159,50 +159,25 @@ function promise_requestorize(promise) {
                 is_called = true;
                 return callback(value, reason);
             }
-            throw new Error(`Callback failed when executing promise. Message: ${reason}`);
+            throw new Error(
+                `Callback failed when ${action}. Message: ${reason}`
+            );
         }
-        promise.then(promise_callback).catch((e) => {
+        promise.then(promise_callback).catch(function (e) {
             promise_callback(undefined, e);
         });
     };
 }
 
-function dynamic_default_import(url) {
-    return function dynamic_import_requestor(callback) {
-        let is_called = false;
-        function promise_callback(value, reason) {
-            if (!is_called) {
-                is_called = true;
-                return callback(value, reason);
-            }
-            throw new Error(`Callback failed when executing ${url}. Message: ${reason}`);
-        }
-        import(url).then(function (module) {
-            promise_callback(module["default"]);
-        }).catch((e) => {
-            const err = new Error(`Error in importing ${url}. Message: ${e.message}`);
-            err.evidence = e;
-            promise_callback(undefined, err);
-        });
-    };
+function dynamic_import(url) {
+    return promise_requestorize(import(url), `importing ${url}`);
 }
 
-function dynamic_import(url) {
-    return function dynamic_import_requestor(callback) {
-        let is_called = false;
-        function promise_callback(value, reason) {
-            if (!is_called) {
-                is_called = true;
-                return callback(value, reason);
-            }
-            throw new Error(`Callback failed when executing ${url}. Message: ${reason}`);
-        }
-        import(url).then(promise_callback).catch((e) => {
-            const err = new Error(`Error in importing ${url}. Message: ${e.message}`);
-            err.evidence = e;
-            promise_callback(undefined, err);
-        });
-    };
+function dynamic_default_import(url) {
+    return parseq.sequence([
+        dynamic_import(url, `default importing ${url}`),
+        requestorize((m) => m["default"])
+    ]);
 }
 
 export default Object.freeze({
