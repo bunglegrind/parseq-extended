@@ -157,11 +157,14 @@ function promise_requestorize(promise, action = "executing promise") {
         function promise_callback(value, reason) {
             if (!is_called) {
                 is_called = true;
-                return callback(value, reason);
+                if (value === undefined) {
+                    const err = new Error(`Failed when ${action}`);
+                    err.evidence = reason;
+                    return callback(undefined, err);
+                }
+                return callback(value);
             }
-            throw new Error(
-                `Callback failed when ${action}. Message: ${reason}`
-            );
+            throw reason || `Callback failed when ${action}`;
         }
         promise.then(promise_callback).catch(function (e) {
             promise_callback(undefined, e);
