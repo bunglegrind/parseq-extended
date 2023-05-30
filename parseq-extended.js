@@ -36,11 +36,13 @@ function when(condition, requestor) {
 
 function requestorize(unary) {
     return function requestor(callback, value) {
+        let return_value;
         try {
-            return callback(unary(value));
+            return_value = unary(value);
         } catch (exception) {
             return callback(undefined, exception);
         }
+        callback(return_value);
     };
 }
 

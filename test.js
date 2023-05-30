@@ -333,13 +333,31 @@ test(
     }
 );
 
-test("Callback exceptions in a promise context must be uncaught - without factory", function (assert) {
+test("Callback exceptions in a promise context must be uncaught - import without factory", function (assert) {
     let flag = false;
     setTimeout(function () {
         assert.same(flag, true, "Callback should throw");
     }, 1000);
     const listener = function (err) {
-        console.log(err);
+        if (err.message === "Callback failed in import without factory") {
+            process.removeListener("uncaughtException", listener);
+            flag = true;
+        }
+    };
+    process.on("uncaughtException", listener);
+    parseq_extended.dynamic_import("./dynamic_import.js")(
+        function my_callback(value, reason) {
+            throw new Error("Callback failed in import without factory");
+        }
+    );
+});
+
+test("Callback exceptions in a promise context must be uncaught - default import without factory", function (assert) {
+    let flag = false;
+    setTimeout(function () {
+        assert.same(flag, true, "Callback should throw");
+    }, 1000);
+    const listener = function (err) {
         if (err.message === "Callback failed in default import without factory") {
             process.removeListener("uncaughtException", listener);
             flag = true;
@@ -353,22 +371,22 @@ test("Callback exceptions in a promise context must be uncaught - without factor
     );
 });
 
-// test("Callback exceptions must be uncaught", function (assert) {
-//     let flag = false;
-//     setTimeout(function () {
-//         assert.same(flag, true, "Callback should throw");
-//     }, 1000);
-//     const listener = function (err) {
-//         if (err.message === "BOOOOOOOM") {
-//             process.removeListener("uncaughtException", listener);
-//             flag = true;
-//         }
-//     };
-//     process.on("uncaughtException", listener);
+test("Callback exceptions must be uncaught", function (assert) {
+    let flag = false;
+    setTimeout(function () {
+        assert.same(flag, true, "Callback should throw");
+    }, 1000);
+    const listener = function (err) {
+        if (err.message === "Callback error") {
+            process.removeListener("uncaughtException", listener);
+            flag = true;
+        }
+    };
+    process.on("uncaughtException", listener);
 
-//     parseq_extended.sequence([
-//         parseq_extended.constant(1)
-//     ])(function my_callback(value, reason) {
-//         throw new Error("BOOOOOOOM");
-//     });
-// });
+    parseq_extended.sequence([
+        parseq_extended.constant(1)
+    ])(function my_callback(value, reason) {
+        throw new Error("Callback error");
+    });
+});
