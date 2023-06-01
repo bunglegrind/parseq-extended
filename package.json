@@ -16,5 +16,8 @@
     "url": "https://github.com/bunglegrind/parseq-extended/issues"
   },
   "homepage": "https://github.com/bunglegrind/parseq-extended#readme",
-  "type": "module"
+  "type": "module",
+  "engines": {
+      "node": ">=20.0.0"
+  }
 }

@@ -9,7 +9,8 @@
     wrap_reason, wrap_requestor
 */
 import process from "node:process";
-import test from "./test_framework.js";
+import test from "node:test";
+import assert from "node:assert/strict";
 import parseq_extended from "./parseq-extended.js";
 import parseq from "./parseq.js";
 
@@ -21,49 +22,49 @@ const a_little_promise = new Promise(function (resolve) {
     setTimeout(() => resolve("success"));
 });
 
-test("parseq-extended should include parseq", function (assert) {
-    assert.same(
+test("parseq-extended should include parseq", function (t) {
+    assert.equal(
         parseq_extended.sequence,
         parseq.sequence,
         "sequence should be in parseq extended"
     );
-    assert.same(
+    assert.equal(
         parseq_extended.parallel,
         parseq.parallel,
         "parallel should be in parseq extended"
     );
-    assert.same(
+    assert.equal(
         parseq_extended.fallback,
         parseq.fallback,
         "fallback should be in parseq extended"
     );
-    assert.same(
+    assert.equal(
         parseq_extended.parallel_object,
         parseq.parallel_object,
         "parallel_object should be in parseq extended"
     );
-    assert.same(
+    assert.equal(
         parseq_extended.race,
         parseq.race,
         "race should be in parseq extended"
     );
 });
 
-test("wrap_reason should encapsulate reasons", function (assert) {
+test("wrap_reason should encapsulate reasons", function (t) {
     parseq_extended.parallel(
         [parseq_extended.wrap_reason(requestor_fail)]
     )(function (value, ignore) {
-        assert.same(Array.isArray(value), true, "value is array");
-        assert.same(value.length, 1, "value is wun element array");
-        assert.same(typeof value[0], "object", "value element is an object");
+        assert.equal(Array.isArray(value), true, "value is array");
+        assert.equal(value.length, 1, "value is wun element array");
+        assert.equal(typeof value[0], "object", "value element is an object");
         const keys = Object.keys(value[0]);
-        assert.same(keys.length, 2, "two keys in the return object");
-        assert.deep_equal(
+        assert.equal(keys.length, 2, "two keys in the return object");
+        assert.deepEqual(
             keys,
             ["value", "reason"],
             "value and reason are the value keys"
         );
-        assert.deep_equal(
+        assert.deepEqual(
             value[0],
             {value: undefined, reason: "failed"},
             "The returned object should be the wun expected"
@@ -71,34 +72,34 @@ test("wrap_reason should encapsulate reasons", function (assert) {
     });
 });
 
-test("constant must return a constant", function (assert) {
+test("constant must return a constant", function (t) {
     parseq_extended.constant(5)(function (value, ignore) {
-        assert.same(value, 5, "it should be five");
+        assert.equal(value, 5, "it should be five");
     });
 });
 
-test("do nothing just passes a value", function (assert) {
+test("do nothing just passes a value", function (t) {
     parseq_extended.sequence([
         parseq_extended.constant(5),
         parseq_extended.do_nothing
     ])(function (value, ignore) {
-        assert.same(value, 5, "it should be five");
+        assert.equal(value, 5, "it should be five");
     });
 });
 
 test(
     "Requestorize transforms an unary function into a requestor",
-    function (assert) {
+    function (t) {
         parseq_extended.sequence([
             parseq_extended.constant(5),
             parseq_extended.requestorize((x) => x + 1)
         ])(function (value, ignore) {
-            assert.same(value, 6, "it should be six");
+            assert.equal(value, 6, "it should be six");
         });
     }
 );
 
-test("Map a requestor into an array", function (assert) {
+test("Map a requestor into an array", function (t) {
     parseq_extended.sequence([
         parseq_extended.constant([1, 2, 3]),
         parseq_extended.when(
@@ -110,11 +111,11 @@ test("Map a requestor into an array", function (assert) {
             )
         )
     ])(function (value, ignore) {
-        assert.deep_equal(value, [2, 3, 4], "it should be [2, 3, 4]");
+        assert.deepEqual(value, [2, 3, 4], "it should be [2, 3, 4]");
     });
 });
 
-test("Map a requestor into an object", function (assert) {
+test("Map a requestor into an object", function (t) {
     parseq_extended.sequence([
         parseq_extended.constant({a: 1, b: 2, c: 3}),
         parseq_extended.when(
@@ -126,7 +127,7 @@ test("Map a requestor into an object", function (assert) {
             )
         )
     ])(function (value, ignore) {
-        assert.deep_equal(
+        assert.deepEqual(
             value,
             Object.assign(Object.create(null), {a: 2, b: 3, c: 4}),
             "it should be {a: 2, b: 3, c: 4}"
@@ -134,7 +135,7 @@ test("Map a requestor into an object", function (assert) {
     });
 });
 
-test("Map an array to a fallback", function (assert) {
+test("Map an array to a fallback", function (t) {
     parseq_extended.sequence([
         parseq_extended.constant([0, 1, 2]),
         parseq_extended.apply_fallback(
@@ -143,11 +144,11 @@ test("Map an array to a fallback", function (assert) {
             )
         )
     ])(function (value, ignore) {
-        assert.deep_equal(value, 1, "it should be 1");
+        assert.deepEqual(value, 1, "it should be 1");
     });
 });
 
-test("Map timeouts to a race", function (assert) {
+test("Map timeouts to a race", function (t) {
     parseq_extended.sequence([
         parseq_extended.constant([5000, 500, 10000]),
         parseq_extended.apply_race(
@@ -164,11 +165,11 @@ test("Map timeouts to a race", function (assert) {
             }
         )
     ])(function (value, ignore) {
-        assert.same(value, "success 500", "timeout 500 should win");
+        assert.equal(value, "success 500", "timeout 500 should win");
     });
 });
 
-test("Map timeouts to a failing race", function (assert) {
+test("Map timeouts to a failing race", function (t) {
     parseq_extended.sequence([
         parseq_extended.constant([5000, 500, 10000]),
         parseq_extended.apply_race(
@@ -186,20 +187,20 @@ test("Map timeouts to a failing race", function (assert) {
             100
         )
     ])(function (value, reason) {
-        assert.same(value, undefined, "nobody should win");
-        assert.same(
+        assert.equal(value, undefined, "nobody should win");
+        assert.equal(
             reason.toString(),
             "Error: parseq.race: Timeout.",
             "time_limit reached"
         );
-        assert.same(reason.evidence, 100, "time_limit");
+        assert.equal(reason.evidence, 100, "time_limit");
     });
 });
 
-test("A promise becomes a requestor", function (assert) {
+test("A promise becomes a requestor", function (t) {
     parseq_extended.promise_requestorize(a_little_promise)(
         function (value) {
-            assert.same(value, "success", "value should be success");
+            assert.equal(value, "success", "value should be success");
         }
     );
     const another_little_promise = new Promise(function (ignore, reject) {
@@ -207,13 +208,13 @@ test("A promise becomes a requestor", function (assert) {
     });
     parseq_extended.promise_requestorize(another_little_promise)(
         function (value, reason) {
-            assert.same(value, undefined, "value should be undefined");
-            assert.same(
+            assert.equal(value, undefined, "value should be undefined");
+            assert.equal(
                 reason.message,
                 "Failed when executing promise",
                 "reason should be failed"
             );
-            assert.same(
+            assert.equal(
                 reason.evidence,
                 "failed",
                 "reason should be failed"
@@ -222,26 +223,26 @@ test("A promise becomes a requestor", function (assert) {
     );
 });
 
-test("dynamic default imports are imported as requestors", function (assert) {
+test("dynamic default imports are imported as requestors", function (t) {
     parseq_extended.dynamic_default_import("./dynamic_default_import.js")(
         function my_callback(value, reason) {
-            assert.same(reason, undefined, "reason should be undefined");
-            assert.same(value?.sample, true, "sample should be true");
+            assert.equal(reason, undefined, "reason should be undefined");
+            assert.equal(value?.sample, true, "sample should be true");
         }
     );
 });
 
-test("dynamic failing default imports are detected", function (assert) {
+test("dynamic failing default imports are detected", function (t) {
     parseq_extended.dynamic_default_import("./failing_import.js")(
         function my_callback(value, reason) {
-            assert.same(value, undefined, "value should be undefined");
-            assert.same(typeof reason, "object", "reason should be an object");
-            assert.same(
+            assert.equal(value, undefined, "value should be undefined");
+            assert.equal(typeof reason, "object", "reason should be an object");
+            assert.equal(
                 reason.message,
                 "Failed when importing ./failing_import.js",
                 "a reason should include a message"
             );
-            assert.same(
+            assert.equal(
                 reason.evidence.message,
                 "non_existent_function is not defined",
                 "a reason should include a message"
@@ -250,11 +251,11 @@ test("dynamic failing default imports are detected", function (assert) {
     );
 });
 
-test("dynamic nondefault imports are imported as requestors", function (assert) {
+test("dynamic nondefault imports are imported as requestors", function (t) {
     parseq_extended.dynamic_import("./dynamic_import.js")(
         function my_callback(value, reason) {
-            assert.same(reason, undefined, "reason should be undefined");
-            assert.same(value?.sample, true, "sample should be true");
+            assert.equal(reason, undefined, "reason should be undefined");
+            assert.equal(value?.sample, true, "sample should be true");
         }
     );
 });
@@ -262,11 +263,11 @@ test("dynamic nondefault imports are imported as requestors", function (assert) 
 //Not so sure anymore...see https://github.com/douglascrockford/parseq/issues/13
 // test(
 //     "Callback exceptions in a promise context must be uncaught - generic promise",
-//     function (assert) {
+//     function (t) {
 //         let flag = false;
 //         setTimeout(function () {
 //             process.removeListener("uncaughtException", listener);
-//             assert.same(flag, true);
+//             assert.equal(flag, true);
 //         }, 1000);
 //         const listener = function (err) {
 //             if (err.message === "generic promise failed!") {
@@ -288,11 +289,11 @@ test("dynamic nondefault imports are imported as requestors", function (assert) 
 
 // test(
 //     "Callback exceptions in a promise context must be uncaught - import",
-//     function (assert) {
+//     function (t) {
 //         let flag = false;
 //         setTimeout(function () {
 //             process.removeListener("uncaughtException", listener);
-//             assert.same(flag, true, "Callback should throw");
+//             assert.equal(flag, true, "Callback should throw");
 //         }, 1000);
 //         const listener = function (err) {
 //             if (err.message === "Callback failed in import") {
@@ -312,11 +313,11 @@ test("dynamic nondefault imports are imported as requestors", function (assert) 
 
 // test(
 //     "Callback exceptions in a promise context must be uncaught - default import",
-//     function (assert) {
+//     function (t) {
 //         let flag = false;
 //         setTimeout(function () {
 //             process.removeListener("uncaughtException", listener);
-//             assert.same(flag, true, "Callback should throw");
+//             assert.equal(flag, true, "Callback should throw");
 //         }, 1000);
 //         const listener = function (err) {
 //             if (err.message === "Callback failed in default import") {
@@ -334,10 +335,10 @@ test("dynamic nondefault imports are imported as requestors", function (assert) 
 //     }
 // );
 
-// test("Callback exceptions in a promise context must be uncaught - import without factory", function (assert) {
+// test("Callback exceptions in a promise context must be uncaught - import without factory", function (t) {
 //     let flag = false;
 //     setTimeout(function () {
-//         assert.same(flag, true, "Callback should throw");
+//         assert.equal(flag, true, "Callback should throw");
 //     }, 1000);
 //     const listener = function (err) {
 //         if (err.message === "Callback failed in import without factory") {
@@ -353,10 +354,10 @@ test("dynamic nondefault imports are imported as requestors", function (assert) 
 //     );
 // });
 
-// test("Callback exceptions in a promise context must be uncaught - default import without factory", function (assert) {
+// test("Callback exceptions in a promise context must be uncaught - default import without factory", function (t) {
 //     let flag = false;
 //     setTimeout(function () {
-//         assert.same(flag, true, "Callback should throw");
+//         assert.equal(flag, true, "Callback should throw");
 //     }, 1000);
 //     const listener = function (err) {
 //         if (err.message === "Callback failed in default import without factory") {
@@ -372,10 +373,10 @@ test("dynamic nondefault imports are imported as requestors", function (assert) 
 //     );
 // });
 
-// test("Callback exceptions must be uncaught", function (assert) {
+// test("Callback exceptions must be uncaught", function (t) {
 //     let flag = false;
 //     setTimeout(function () {
-//         assert.same(flag, true, "Callback should throw");
+//         assert.equal(flag, true, "Callback should throw");
 //     }, 1000);
 //     const listener = function (err) {
 //         if (err.message === "Callback error") {
@@ -392,7 +393,7 @@ test("dynamic nondefault imports are imported as requestors", function (assert) 
 //     });
 // });
 
-test("Callback exceptions must be...no idea", function (assert) {
+test("Callback exceptions must be...no idea", function (t) {
     parseq.sequence([
         function requestor(callback) {
             callback(1);
@@ -407,7 +408,7 @@ test("Callback exceptions must be...no idea", function (assert) {
     });
 });
 
-test("Callback exceptions must be...no idea (2)", function (assert) {
+test("Callback exceptions must be...no idea (2)", function (t) {
     parseq.sequence([
         parseq.sequence([
             function requestor(callback) {
@@ -424,7 +425,7 @@ test("Callback exceptions must be...no idea (2)", function (assert) {
     });
 });
 
-test("Callback exceptions must be...no idea (3)", function (assert) {
+test("Callback exceptions must be...no idea (3)", function (t) {
     parseq.sequence([
         parseq.requestorize(function unary() {
             return 1;
