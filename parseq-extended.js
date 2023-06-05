@@ -10,16 +10,28 @@
 */
 import parseq from "./parseq.js";
 
-function do_nothing(cb, v) {
-    return cb(v);
-}
-
-
-function constant(v) {
-    return function requestor_constant(callback) {
-        return callback(v);
+function delay(ms) {
+    return function (unary) {
+        return function delay_requestor(cb, v) {
+            const id = setTimeout(function (v) {
+                let result;
+                try {
+                    result = unary(v);
+                } catch (error) {
+                    return cb(undefined, error);
+                }
+                return cb(result);
+            }, ms, v);
+            return function () {
+                clearTimeout(ms);
+            };
+        };
     };
 }
+
+const requestorize = delay(0);
+const do_nothing = requestorize((v) => v);
+const constant = (c) => requestorize(() => c);
 
 function if_else(condition, requestor_if, requestor_else) {
     return function (callback, value) {
@@ -32,18 +44,6 @@ function if_else(condition, requestor_if, requestor_else) {
 
 function when(condition, requestor) {
     return if_else(condition, requestor, do_nothing);
-}
-
-function requestorize(unary) {
-    return function requestor(callback, value) {
-        let return_value;
-        try {
-            return_value = unary(value);
-        } catch (exception) {
-            return callback(undefined, exception);
-        }
-        callback(return_value);
-    };
 }
 
 function wrap_reason(requestor) {
@@ -201,5 +201,6 @@ export default Object.freeze({
     apply_parallel,
     apply_parallel_object,
     dynamic_default_import,
-    dynamic_import
+    dynamic_import,
+    delay
 });
