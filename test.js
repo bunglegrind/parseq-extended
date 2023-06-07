@@ -292,7 +292,7 @@ test("dynamic default imports are imported as requestors", function (t, done) {
     );
 });
 
-test.only("dynamic failing default imports are detected", function (t, done) {
+test("dynamic failing default imports are detected", function (t, done) {
     parseq_extended.dynamic_default_import("./failing_import.js")(
         function my_callback(value, reason) {
             try {
