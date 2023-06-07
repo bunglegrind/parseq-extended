@@ -23,7 +23,7 @@ function delay(ms) {
                 return cb(result);
             }, ms, v);
             return function () {
-                clearTimeout(ms);
+                clearTimeout(id);
             };
         };
     };
@@ -180,8 +180,15 @@ function dynamic_import(url) {
 
 function dynamic_default_import(url) {
     return parseq.sequence([
-        dynamic_import(url, `default importing ${url}`),
+        dynamic_import(url),
         requestorize((m) => m["default"])
+    ]);
+}
+
+function factory(requestor, adapter) {
+    return parseq.sequence([
+        requestorize(adapter),
+        requestor
     ]);
 }
 
@@ -202,5 +209,6 @@ export default Object.freeze({
     apply_parallel_object,
     dynamic_default_import,
     dynamic_import,
-    delay
+    delay,
+    factory
 });
