@@ -351,10 +351,10 @@ test(
     });
 
 test("a factory should pass all the relevant parameters to the requestor", function (t, done) {
-    parseq_extended.factory(parseq_extended.requestorize((v) => v), function adapt_parameters(v) {
-        return {...v, w: 2};
-    })(
-        function callback(value, reason) {
+    parseq_extended.factory(parseq_extended.requestorize((v) => v))(
+        function adapt_parameters(v) {
+            return {...v, w: 2};
+        })(function callback(value, reason) {
             done(assert.deepEqual(value, {v: 1, w: 2}));
         }, {v: 1});
 });
