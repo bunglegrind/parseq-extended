@@ -1,12 +1,16 @@
 /*jslint
-    node, unordered
+    unordered
+*/
+/*global
+    setTimeout, clearTimeout
 */
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, catch,
-    constant, create, do_nothing, fallback, forEach, freeze, if_else, keys,
+    constant, create, default, delay, do_nothing, dynamic_default_import,
+    dynamic_import, evidence, factory, fallback, forEach, freeze, if_else, keys,
     make_requestor_factory, map, parallel, parallel_object,
-    promise_requestorize, race, reason, requestorize, then, value, when,
-    wrap_reason, wrap_requestor
+    promise_requestorize, race, reason, requestorize, sequence, then, value,
+    when, wrap_reason, wrap_requestor
 */
 import parseq from "./parseq.js";
 
@@ -181,7 +185,7 @@ function dynamic_import(url) {
 function dynamic_default_import(url) {
     return parseq.sequence([
         dynamic_import(url),
-        requestorize((m) => m["default"])
+        requestorize((m) => m.default)
     ]);
 }
 
@@ -195,7 +199,9 @@ function factory(requestor) {
 }
 
 export default Object.freeze({
+/*jslint-disable*/
     ...parseq,
+/*jslint-enable*/
     wrap_reason,
     constant,
     wrap_requestor,
