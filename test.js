@@ -359,6 +359,14 @@ test("a factory should pass all the relevant parameters to the requestor", funct
         }, {v: 1});
 });
 
+test("default factory combiner should combine online value with offline values", function (t, done) {
+    parseq_extended.factory(
+        parseq_extended.requestorize((v) => v))({w: 2})(
+            function callback(value, reason) {
+                done(assert.deepEqual(value, {v: 1, w: 2}));
+            }, {v: 1});
+});
+
 test(
     "Callback exceptions in a promise context must be uncaught - generic promise",
     function (t, done) {

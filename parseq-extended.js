@@ -5,13 +5,14 @@
     setTimeout, clearTimeout
 */
 /*property
-    apply_fallback, apply_parallel, apply_parallel_object, apply_race, catch,
-    constant, create, default, delay, do_nothing, dynamic_default_import,
+    apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
+    catch, constant, create, default, delay, do_nothing, dynamic_default_import,
     dynamic_import, evidence, factory, fallback, forEach, freeze, if_else, keys,
     make_requestor_factory, map, parallel, parallel_object,
     promise_requestorize, race, reason, requestorize, sequence, then, value,
     when, wrap_reason, wrap_requestor
 */
+
 import parseq from "./parseq.js";
 
 function delay(ms) {
@@ -191,6 +192,14 @@ function dynamic_default_import(url) {
 
 function factory(requestor) {
     return function (adapter) {
+        if (typeof adapter !== "function") {
+            const default_adapter = (offline) => (value) => Object.assign(
+                {},
+                offline,
+                value
+            );
+            adapter = default_adapter(adapter);
+        }
         return parseq.sequence([
             requestorize(adapter),
             requestor
