@@ -150,7 +150,7 @@ test("Map a requestor into an array", function (t, done) {
         parseq_extended.when(
             (v) => v.length === 3,
             parseq_extended.apply_parallel(
-                parseq_extended.wrap_requestor(
+                parseq_extended.factory(
                     parseq_extended.requestorize((x) => x + 1)
                 )
             )
@@ -166,7 +166,7 @@ test("Map a requestor into an object", function (t, done) {
         parseq_extended.when(
             (v) => Object.keys(v).length === 3,
             parseq_extended.apply_parallel_object(
-                parseq_extended.wrap_requestor(
+                parseq_extended.factory(
                     parseq_extended.requestorize((x) => x + 1)
                 )
             )
@@ -184,7 +184,7 @@ test("Map an array to a fallback", function (t, done) {
     parseq_extended.sequence([
         parseq_extended.constant([0, 1, 2]),
         parseq_extended.apply_fallback(
-            parseq_extended.wrap_requestor(
+            parseq_extended.factory(
                 parseq_extended.when((v) => v === 0, requestor_fail)
             )
         )

@@ -1,16 +1,16 @@
 /*jslint
     unordered
-*/
+    */
 /*global
     setTimeout, clearTimeout
-*/
+    */
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
     catch, constant, create, default, delay, do_nothing, dynamic_default_import,
     dynamic_import, evidence, factory, fallback, forEach, freeze, if_else, keys,
     make_requestor_factory, map, parallel, parallel_object,
     promise_requestorize, race, reason, requestorize, sequence, then, value,
-    when, wrap_reason, wrap_requestor
+    when, wrap_reason
 */
 
 import parseq from "./parseq.js";
@@ -119,14 +119,6 @@ function apply_parallel(
     };
 }
 
-function wrap_requestor(requestor) {
-    return function (value) {
-        return function (callback) {
-            return requestor(callback, value);
-        };
-    };
-}
-
 function apply_parallel_object(
     requestor_factory,
     time_limit,
@@ -154,9 +146,6 @@ function apply_parallel_object(
     };
 }
 
-function make_requestor_factory(unary) {
-    return wrap_requestor(requestorize(unary));
-}
 
 function promise_requestorize(promise, action = "executing promise") {
     return function (callback) {
@@ -192,12 +181,22 @@ function dynamic_default_import(url) {
 
 function factory(requestor) {
     return function (adapter) {
+        function default_adapter(precomputed) {
+            return function (value) {
+//default: both values are object, so requestor is provided by their merge
+                if (typeof precomputed === "object") {
+                    return Object.assign(
+                        {},
+                        precomputed,
+                        value
+                    );
+                }
+//otherwise, default behavior is to provide only the precomputed value
+//in order to have a simple make_requestor_factory
+                return precomputed;
+            };
+        }
         if (typeof adapter !== "function") {
-            const default_adapter = (offline) => (value) => Object.assign(
-                {},
-                offline,
-                value
-            );
             adapter = default_adapter(adapter);
         }
         return parseq.sequence([
@@ -207,13 +206,16 @@ function factory(requestor) {
     };
 }
 
+function make_requestor_factory(unary) {
+    return factory(requestorize(unary));
+}
+
 export default Object.freeze({
 /*jslint-disable*/
     ...parseq,
 /*jslint-enable*/
     wrap_reason,
     constant,
-    wrap_requestor,
     requestorize,
     make_requestor_factory,
     promise_requestorize,
