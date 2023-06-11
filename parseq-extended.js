@@ -183,8 +183,11 @@ function factory(requestor) {
     return function (adapter) {
         function default_adapter(precomputed) {
             return function (value) {
-//default: both values are object, so requestor is provided by their merge
-                if (typeof precomputed === "object") {
+//default: both values are object, so we give the requestor their merge
+                if (
+                    typeof precomputed === "object"
+                    && !Array.isArray(precomputed)
+                ) {
                     return Object.assign(
                         {},
                         precomputed,

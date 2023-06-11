@@ -160,6 +160,22 @@ test("Map a requestor into an array", function (t, done) {
     });
 });
 
+test("Map a requestor which is expecting an array into an array", function (t, done) {
+    parseq_extended.sequence([
+        parseq_extended.constant([[1], [2], [3]]),
+        parseq_extended.when(
+            (v) => v.length === 3,
+            parseq_extended.apply_parallel(
+                parseq_extended.factory(
+                    parseq_extended.requestorize(([x]) => x + 1)
+                )
+            )
+        )
+    ])(function (value, ignore) {
+        done(assert.deepEqual(value, [2, 3, 4], "it should be [2, 3, 4]"));
+    });
+});
+
 test("Map a requestor into an object", function (t, done) {
     parseq_extended.sequence([
         parseq_extended.constant({a: 1, b: 2, c: 3}),
