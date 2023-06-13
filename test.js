@@ -459,3 +459,16 @@ test("Final callback exceptions must crash the program", function (t, done) {
         throw myError("Booom!");
     });
 });
+
+test("parseq should provide a requestor to merge properties to a value", function (t, done) {
+    parseq_extended.parallel_merge({
+        prop_one: parseq_extended.constant(1),
+        prop_two: parseq_extended.constant(2)
+    })(function (value, reason) {
+        done(assert.deepEqual(value, {
+            prop_one: 1,
+            prop_two: 2,
+            prop_zero: 0
+        }));
+    }, {prop_zero: 0});
+});
