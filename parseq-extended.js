@@ -146,6 +146,26 @@ function apply_parallel_object(
     };
 }
 
+function parallel_merge(obj, opt_obj, time_limit, time_option, throttle) {
+    return function parallel_merge_requestor(callback, value) {
+        return parseq.sequence([
+            parseq.parallel_object(
+                obj,
+                opt_obj,
+                time_limit,
+                time_option,
+                throttle
+            ),
+            requestorize(function (to_merge) {
+                return Object.assign(
+                    Object.create(null),
+                    value,
+                    to_merge
+                );
+            })
+        ])(callback);
+    };
+}
 
 function promise_requestorize(promise, action = "executing promise") {
     return function (callback) {
@@ -232,5 +252,6 @@ export default Object.freeze({
     dynamic_default_import,
     dynamic_import,
     delay,
-    factory
+    factory,
+    parallel_merge
 });
