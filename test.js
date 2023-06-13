@@ -160,6 +160,14 @@ test("Map a requestor into an array", function (t, done) {
     });
 });
 
+test("A factory called without parameters passes online value to the requestor", function (t, done) {
+    parseq_extended.factory(
+        parseq_extended.requestorize(({v}) => v + 1)
+    )()(function (value, ignore) {
+       done(assert.equal(value, 4));
+    }, {v: 3});
+});
+
 test("Map a requestor which is expecting an array into an array", function (t, done) {
     parseq_extended.sequence([
         parseq_extended.constant([[1], [2], [3]]),
@@ -463,12 +471,12 @@ test("Final callback exceptions must crash the program", function (t, done) {
 test("parseq should provide a requestor to merge properties to a value", function (t, done) {
     parseq_extended.parallel_merge({
         prop_one: parseq_extended.constant(1),
-        prop_two: parseq_extended.constant(2)
-    })(function (value, reason) {
+        prop_two: parseq_extended.requestorize(({prop_zero}) => prop_zero + 5)
+    })(function (value, ignore) {
         const expected = Object.assign(
             Object.create(null), {
                 prop_one: 1,
-                prop_two: 2,
+                prop_two: 5,
                 prop_zero: 0
             }
         );
