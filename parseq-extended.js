@@ -87,7 +87,7 @@ function apply_race(
         } catch (e) {
             return callback(
                 undefined,
-                make_reason("apply_race", "", e);
+                make_reason("apply_race", "", e)
             );
         }
     };
@@ -106,7 +106,7 @@ function apply_fallback(
         } catch (e) {
             return callback(
                 undefined,
-                make_reason("apply_fallback", "", e);
+                make_reason("apply_fallback", "", e)
             );
         }
     };
@@ -135,7 +135,7 @@ function apply_parallel(
         } catch (e) {
             return callback(
                 undefined,
-                make_reason("apply_parallel", "", e);
+                make_reason("apply_parallel", "", e)
             );
         }
     };
@@ -165,7 +165,7 @@ function apply_parallel_object(
         } catch (e) {
             return callback(
                 undefined,
-                make_reason("apply_parallel_object", "", e);
+                make_reason("apply_parallel_object", "", e)
             );
         }
     };
@@ -204,9 +204,8 @@ function promise_requestorize(promise, action = "executing promise") {
                         make_reason(
                             "promise_requestorize",
                             `Failed when ${action}`,
-                            reason);
+                            reason)
                     );
-                    return callback(undefined, err);
                 }
                 return callback(value);
             }
