@@ -15,6 +15,16 @@
 
 import parseq from "./parseq.js";
 
+function make_reason(factory_name, excuse, evidence) {
+    const reason = new Error("parseq." + factory_name + (
+        excuse === undefined
+        ? ""
+        : ": " + excuse
+    ));
+    reason.evidence = evidence;
+    return reason;
+}
+
 function delay(ms) {
     return function (unary) {
         return function delay_requestor(cb, v) {
@@ -23,7 +33,10 @@ function delay(ms) {
                 try {
                     result = unary(v);
                 } catch (error) {
-                    return cb(undefined, error);
+                    return cb(
+                        undefined,
+                        make_reason("delay", "",  error)
+                    );
                 }
                 return cb(result);
             }, ms, v);
@@ -72,7 +85,10 @@ function apply_race(
                 throttle
             )(callback);
         } catch (e) {
-            return callback(undefined, e);
+            return callback(
+                undefined,
+                make_reason("apply_race", "", e);
+            );
         }
     };
 }
@@ -88,7 +104,10 @@ function apply_fallback(
                 time_limit
             )(callback);
         } catch (e) {
-            return callback(undefined, e);
+            return callback(
+                undefined,
+                make_reason("apply_fallback", "", e);
+            );
         }
     };
 }
@@ -114,7 +133,10 @@ function apply_parallel(
                 throttle
             )(callback);
         } catch (e) {
-            return callback(undefined, e);
+            return callback(
+                undefined,
+                make_reason("apply_parallel", "", e);
+            );
         }
     };
 }
@@ -141,7 +163,10 @@ function apply_parallel_object(
             )(callback);
 
         } catch (e) {
-            return callback(undefined, e);
+            return callback(
+                undefined,
+                make_reason("apply_parallel_object", "", e);
+            );
         }
     };
 }
@@ -174,8 +199,13 @@ function promise_requestorize(promise, action = "executing promise") {
             if (!is_called) {
                 is_called = true;
                 if (value === undefined) {
-                    const err = new Error(`Failed when ${action}`);
-                    err.evidence = reason;
+                    return callback(
+                        undefined,
+                        make_reason(
+                            "promise_requestorize",
+                            `Failed when ${action}`,
+                            reason);
+                    );
                     return callback(undefined, err);
                 }
                 return callback(value);
