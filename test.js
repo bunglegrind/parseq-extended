@@ -277,16 +277,20 @@ test("A promise becomes a requestor", function (t, done) {
             done(assert.equal(value, "success", "value should be success"));
         }
     );
+});
+
+test("a failing promise becomes a failing requestor", function (t, done) {
     const another_little_promise = new Promise(function (ignore, reject) {
         setTimeout(() => reject("failed"));
     });
+
     parseq_extended.promise_requestorize(another_little_promise)(
         function (value, reason) {
             try {
                 assert.equal(value, undefined, "value should be undefined");
                 assert.equal(
                     reason.message,
-                    "Failed when executing promise",
+                    "parseq.promise_requestorize: Failed when executing promise",
                     "reason should be failed"
                 );
                 assert.equal(
@@ -324,7 +328,7 @@ test("dynamic failing default imports are detected", function (t, done) {
                 assert.equal(typeof reason, "object", "reason should be an object");
                 assert.equal(
                     reason.message,
-                    "Failed when importing ./failing_import.js",
+                    "parseq.promise_requestorize: Failed when importing ./failing_import.js",
                     "a reason should include a message"
                 );
                 assert.equal(
