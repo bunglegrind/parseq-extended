@@ -7,10 +7,10 @@
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
     catch, constant, create, default, delay, do_nothing, dynamic_default_import,
-    dynamic_import, evidence, factory, fallback, forEach, freeze, if_else, keys,
-    make_requestor_factory, map, parallel, parallel_object,
-    promise_requestorize, race, reason, requestorize, sequence, then, value,
-    when, wrap_reason
+    dynamic_import, evidence, factory, fallback, forEach, freeze, if_else,
+    isArray, keys, make_requestor_factory, map, parallel, parallel_merge,
+    parallel_object, promise_requestorize, race, reason, requestorize, sequence,
+    then, value, when, wrap_reason
 */
 
 import parseq from "./parseq.js";
@@ -35,7 +35,7 @@ function delay(ms) {
                 } catch (error) {
                     return cb(
                         undefined,
-                        make_reason("delay", "",  error)
+                        make_reason("delay", "", error)
                     );
                 }
                 return cb(result);
@@ -201,10 +201,7 @@ function promise_requestorize(promise, action = "executing promise") {
                 if (value === undefined) {
                     return callback(
                         undefined,
-                        make_reason(
-                            "promise_requestorize",
-                            `Failed when ${action}`,
-                            reason)
+                        reason
                     );
                 }
                 return callback(value);
@@ -212,7 +209,14 @@ function promise_requestorize(promise, action = "executing promise") {
             throw reason || `Callback failed when ${action}`;
         }
         promise.then(promise_callback).catch(function (e) {
-            promise_callback(undefined, e);
+            promise_callback(
+                undefined,
+                make_reason(
+                    "promise_requestorize",
+                    `Failed when ${action}`,
+                    e
+                )
+            );
         });
     };
 }

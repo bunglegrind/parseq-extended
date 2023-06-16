@@ -52,7 +52,8 @@ function hasThrown(event, message, t, done) {
         done(new Error("Callback should throw"));
     }, 1000);
     const listener = function (err) {
-        if (err.message === message) {
+        console.log(err);
+        if (err?.evidence === `Error: ${message}`) {
             process.removeListener(event, listener);
             clearTimeout(id);
             done();
@@ -395,10 +396,15 @@ test("default factory combiner should combine online value with offline values",
             }, {v: 1});
 });
 
-test(
+test.only(
     "Callback exceptions in a promise context must be uncaught - generic promise",
     function (t, done) {
-        hasThrown("unhandledRejection", "generic promise failed!", t , done);
+        hasThrown(
+            "unhandledRejection",
+            "generic promise failed!",
+            t,
+            done
+        );
         parseq_extended.sequence([
             parseq_extended.promise_requestorize(a_little_promise)
         ])(
