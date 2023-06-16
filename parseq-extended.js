@@ -201,21 +201,26 @@ function promise_requestorize(promise, action = "executing promise") {
                 if (value === undefined) {
                     return callback(
                         undefined,
-                        reason
+//first callback call: promise has thrown
+                        make_reason(
+                            "promise_requestorize",
+                            `Failed when ${action}`,
+                            reason
+                        )
                     );
                 }
                 return callback(value);
             }
-            throw reason || `Callback failed when ${action}`;
+//second callback call: callback has thrown
+            const err = new Error(`Callback failed when ${action}`);
+            err.evidence = reason;
+            throw err;
         }
         promise.then(promise_callback).catch(function (e) {
+//at this point we still don't know if the promise or the callback has thrown
             promise_callback(
                 undefined,
-                make_reason(
-                    "promise_requestorize",
-                    `Failed when ${action}`,
-                    e
-                )
+                e
             );
         });
     };

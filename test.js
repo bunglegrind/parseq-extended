@@ -33,7 +33,7 @@ before(function () {
     const defaultExceptionListener = process.listeners("uncaughtException")[0];
     process.removeAllListeners("uncaughtException");
     process.on("uncaughtException", function (err) {
-        if (!err.myFlag) {
+        if (!err.myFlag && !err?.evidence?.myFlag) {
             defaultExceptionListener(err);
         }
     });
@@ -41,7 +41,7 @@ before(function () {
     const defaultRejectionListener = process.listeners("unhandledRejection")[0];
     process.removeAllListeners("unhandledRejection");
     process.on("unhandledRejection", function (err) {
-        if (!err.myFlag) {
+        if (!err.myFlag && !err?.evidence?.myFlag) {
             defaultRejectionListener(err);
         }
     });
@@ -52,8 +52,10 @@ function hasThrown(event, message, t, done) {
         done(new Error("Callback should throw"));
     }, 1000);
     const listener = function (err) {
-        console.log(err);
-        if (err?.evidence === `Error: ${message}`) {
+        if (
+            err?.evidence?.message === `${message}`
+            || err?.message === `${message}`
+        ) {
             process.removeListener(event, listener);
             clearTimeout(id);
             done();
@@ -62,7 +64,7 @@ function hasThrown(event, message, t, done) {
     process.prependListener(event, listener);
 }
 
-test("parseq-extended should include parseq", function (t) {
+test("parseq-extended should include parseq", function () {
     assert.equal(
         parseq_extended.sequence,
         parseq.sequence,
@@ -396,7 +398,7 @@ test("default factory combiner should combine online value with offline values",
             }, {v: 1});
 });
 
-test.only(
+test(
     "Callback exceptions in a promise context must be uncaught - generic promise",
     function (t, done) {
         hasThrown(
