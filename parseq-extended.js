@@ -15,6 +15,21 @@
 
 import parseq from "./parseq.js";
 
+function callback_factory(cb) {
+    let is_called = false;
+    return function callback(value, reason) {
+        if (!is_called) {
+            is_called = true;
+            return cb(value, reason);
+        }
+        const err = new Error(`Callback failed`);
+        if (reason) {
+            err.evidence = reason;
+        }
+        throw err;
+    };
+}
+
 function make_reason(factory_name, excuse, evidence) {
     const reason = new Error("parseq." + factory_name + (
         excuse === undefined
@@ -28,17 +43,18 @@ function make_reason(factory_name, excuse, evidence) {
 function delay(ms) {
     return function (unary) {
         return function delay_requestor(cb, v) {
+            const callback = callback_factory(cb);
             const id = setTimeout(function (v) {
                 let result;
                 try {
                     result = unary(v);
                 } catch (error) {
-                    return cb(
+                    return callback(
                         undefined,
                         make_reason("delay", "", error)
                     );
                 }
-                return cb(result);
+                return callback(result);
             }, ms, v);
             return function () {
                 clearTimeout(id);
@@ -52,7 +68,8 @@ const do_nothing = requestorize((v) => v);
 const constant = (c) => requestorize(() => c);
 
 function if_else(condition, requestor_if, requestor_else) {
-    return function (callback, value) {
+    return function (cb, value) {
+        const callback = callback_factory(cb);
         if (condition(value)) {
             return requestor_if(callback, value);
         }
@@ -65,7 +82,8 @@ function when(condition, requestor) {
 }
 
 function wrap_reason(requestor) {
-    return function (callback, value) {
+    return function (cb, value) {
+        const callback = callback_factory(cb);
         return requestor(function (value, reason) {
             return callback({value, reason});
         }, value);
@@ -77,7 +95,8 @@ function apply_race(
     time_limit,
     throttle
 ) {
-    return function (callback, value) {
+    return function (cb, value) {
+        const callback = callback_factory(cb);
         try {
             return parseq.race(
                 value.map(requestor_factory),
@@ -97,7 +116,8 @@ function apply_fallback(
     requestor_factory,
     time_limit
 ) {
-    return function (callback, value) {
+    return function (cb, value) {
+        const callback = callback_factory(cb);
         try {
             return parseq.fallback(
                 value.map(requestor_factory),
@@ -119,7 +139,8 @@ function apply_parallel(
     time_option,
     throttle
 ) {
-    return function (callback, value) {
+    return function (cb, value) {
+        const callback = callback_factory(cb);
         try {
             return parseq.parallel(
                 value.map(requestor_factory),
@@ -147,7 +168,8 @@ function apply_parallel_object(
     time_option,
     throttle
 ) {
-    return function (callback, value) {
+    return function (cb, value) {
+        const callback = callback_factory(cb);
         try {
             const keys = Object.keys(value);
             const required_obj_requestor = Object.create(null);
@@ -172,7 +194,8 @@ function apply_parallel_object(
 }
 
 function parallel_merge(obj, opt_obj, time_limit, time_option, throttle) {
-    return function parallel_merge_requestor(callback, value) {
+    return function parallel_merge_requestor(cb, value) {
+        const callback = callback_factory(cb);
         return parseq.sequence([
             parseq.parallel_object(
                 obj,
