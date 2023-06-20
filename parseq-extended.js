@@ -8,14 +8,26 @@
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
     catch, constant, create, default, delay, do_nothing, dynamic_default_import,
     dynamic_import, evidence, factory, fallback, forEach, freeze, if_else,
-    isArray, keys, make_requestor_factory, map, parallel, parallel_merge,
-    parallel_object, promise_requestorize, race, reason, requestorize, sequence,
-    then, value, when, wrap_reason
+    isArray, keys, length, make_reason, make_requestor_factory, map, parallel,
+    parallel_merge, parallel_object, promise_requestorize, race, reason,
+    requestorize, sequence, then, value, when, wrap_reason
 */
+
 
 import parseq from "./parseq.js";
 
-function callback_factory(cb) {
+function check_callback(callback, factory_name) {
+    if (typeof callback !== "function" || callback.length !== 2) {
+        throw make_reason(
+            factory_name,
+            "Not a callback function.",
+            callback
+        );
+    }
+}
+
+function callback_factory(cb, factory_name) {
+    check_callback(cb, factory_name);
     let is_called = false;
     return function callback(value, reason) {
         if (!is_called) {
@@ -40,10 +52,10 @@ function make_reason(factory_name, excuse, evidence) {
     return reason;
 }
 
-function delay(ms) {
+function delay(ms, name = "delay") {
     return function (unary) {
         return function delay_requestor(cb, v) {
-            const callback = callback_factory(cb);
+            const callback = callback_factory(cb, name);
             const id = setTimeout(function (v) {
                 let result;
                 try {
@@ -63,13 +75,13 @@ function delay(ms) {
     };
 }
 
-const requestorize = delay(0);
-const do_nothing = requestorize((v) => v);
-const constant = (c) => requestorize(() => c);
+const requestorize = delay(0, "requestorize");
+const do_nothing = delay(0, "do_nothing")((v) => v);
+const constant = (c) => delay(0, `constant ${c}`)(() => c);
 
-function if_else(condition, requestor_if, requestor_else) {
+function if_else(condition, requestor_if, requestor_else, name = "if_else") {
     return function (cb, value) {
-        const callback = callback_factory(cb);
+        const callback = callback_factory(cb, name);
         if (condition(value)) {
             return requestor_if(callback, value);
         }
@@ -78,12 +90,12 @@ function if_else(condition, requestor_if, requestor_else) {
 }
 
 function when(condition, requestor) {
-    return if_else(condition, requestor, do_nothing);
+    return if_else(condition, requestor, do_nothing, "when");
 }
 
 function wrap_reason(requestor) {
     return function (cb, value) {
-        const callback = callback_factory(cb);
+        const callback = callback_factory(cb, "wrap_reason");
         return requestor(function (value, reason) {
             return callback({value, reason});
         }, value);
@@ -96,7 +108,7 @@ function apply_race(
     throttle
 ) {
     return function (cb, value) {
-        const callback = callback_factory(cb);
+        const callback = callback_factory(cb, "apply_race");
         try {
             return parseq.race(
                 value.map(requestor_factory),
@@ -117,7 +129,7 @@ function apply_fallback(
     time_limit
 ) {
     return function (cb, value) {
-        const callback = callback_factory(cb);
+        const callback = callback_factory(cb, "apply_fallback");
         try {
             return parseq.fallback(
                 value.map(requestor_factory),
@@ -140,7 +152,7 @@ function apply_parallel(
     throttle
 ) {
     return function (cb, value) {
-        const callback = callback_factory(cb);
+        const callback = callback_factory(cb, "apply_parallel");
         try {
             return parseq.parallel(
                 value.map(requestor_factory),
@@ -169,7 +181,7 @@ function apply_parallel_object(
     throttle
 ) {
     return function (cb, value) {
-        const callback = callback_factory(cb);
+        const callback = callback_factory(cb, "apply_parallel_object");
         try {
             const keys = Object.keys(value);
             const required_obj_requestor = Object.create(null);
@@ -195,7 +207,7 @@ function apply_parallel_object(
 
 function parallel_merge(obj, opt_obj, time_limit, time_option, throttle) {
     return function parallel_merge_requestor(cb, value) {
-        const callback = callback_factory(cb);
+        const callback = callback_factory(cb, "parallel_merge");
         return parseq.sequence([
             parseq.parallel_object(
                 obj,
@@ -217,6 +229,7 @@ function parallel_merge(obj, opt_obj, time_limit, time_option, throttle) {
 
 function promise_requestorize(promise, action = "executing promise") {
     return function (callback) {
+        check_callback(callback, action);
         let is_called = false;
         function promise_callback(value, reason) {
             if (!is_called) {
@@ -260,7 +273,7 @@ function dynamic_default_import(url) {
     ]);
 }
 
-function factory(requestor) {
+function factory(requestor, factory_name = "factory") {
     return function (adapter) {
         function default_adapter(precomputed) {
             return function (value) {
@@ -283,10 +296,13 @@ function factory(requestor) {
         if (typeof adapter !== "function") {
             adapter = default_adapter(adapter);
         }
-        return parseq.sequence([
-            requestorize(adapter),
-            requestor
-        ]);
+        return function requestor_factory(cb, value) {
+            check_callback(cb, factory_name);
+            return parseq.sequence([
+                requestorize(adapter),
+                requestor
+            ])(cb, value);
+        };
     };
 }
 
@@ -314,5 +330,6 @@ export default Object.freeze({
     dynamic_import,
     delay,
     factory,
-    parallel_merge
+    parallel_merge,
+    make_reason
 });

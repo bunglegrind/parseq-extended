@@ -276,7 +276,7 @@ test("Map timeouts to a failing race", function (t, done) {
 
 test("A promise becomes a requestor", function (t, done) {
     parseq_extended.promise_requestorize(a_little_promise)(
-        function (value) {
+        function (value, ignore) {
             done(assert.equal(value, "success", "value should be success"));
         }
     );
