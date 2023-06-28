@@ -63,7 +63,7 @@ function delay(ms, name = "delay") {
                 } catch (error) {
                     return callback(
                         undefined,
-                        make_reason("delay", "", error)
+                        make_reason(name, "", error)
                     );
                 }
                 return callback(result);
@@ -274,7 +274,11 @@ function dynamic_default_import(url) {
 }
 
 function factory(requestor, factory_name = "factory") {
+//the adapter combines the online value passed to the requestor with the
+// closure/context in which the factory is executed
+// its return value is passed to the requestor
     return function (adapter) {
+//a default adapter is provided in order to manage the most common cases
         function default_adapter(precomputed) {
             return function (value) {
 //default: both values are object, so we give the requestor their merge
@@ -290,13 +294,13 @@ function factory(requestor, factory_name = "factory") {
                 }
 //otherwise, default behavior is to provide only the precomputed value
 //in order to have a simple make_requestor_factory unless it's nullish
-                return precomputed  ?? value;
+                return precomputed ?? value;
             };
         }
         if (typeof adapter !== "function") {
             adapter = default_adapter(adapter);
         }
-        return function requestor_factory(cb, value) {
+        return function requestor(cb, value) {
             check_callback(cb, factory_name);
             return parseq.sequence([
                 requestorize(adapter),
