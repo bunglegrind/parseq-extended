@@ -1,13 +1,17 @@
 /*jslint
-    node, unordered
+    node, unordered, fart
 */
 /*property
     a, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
-    assign, b, c, constant, create, deep_equal, do_nothing, evidence, fallback,
-    isArray, keys, length, parallel, parallel_object, promise_requestorize,
-    race, reason, requestorize, same, sequence, toString, value, when,
-    wrap_reason, wrap_requestor
+    assign, b, c, constant, create, deepEqual, delay, do_nothing,
+    dynamic_default_import, dynamic_import, equal, evidence, factory_maker,
+    fallback, isArray, keys, length, listeners, message, myFlag, now, ok, on,
+    parallel, parallel_merge, parallel_object, prependListener,
+    promise_requestorize, prop_one, prop_two, prop_zero, race, reason,
+    removeAllListeners, removeListener, requestorize, sample, sequence,
+    toString, v, value, w, when, wrap_reason
 */
+
 import process from "node:process";
 import {before, test} from "node:test";
 import assert from "node:assert/strict";
@@ -22,12 +26,14 @@ const a_little_promise = new Promise(function (resolve) {
     setTimeout(() => resolve("success"), 0);
 });
 
+/*jslint-disable*/
 function myError(msg) {
     const err = new Error(msg);
     err.myFlag = true;
 
     return err;
 }
+/*jslint-enable*/
 
 before(function () {
     const defaultExceptionListener = process.listeners("uncaughtException")[0];
@@ -47,7 +53,7 @@ before(function () {
     });
 });
 
-function hasThrown(event, message, t, done) {
+function hasThrown(event, message, done) {
     const id = setTimeout(function () {
         done(new Error("Callback should throw"));
     }, 1000);
@@ -92,14 +98,18 @@ test("parseq-extended should include parseq", function () {
     );
 });
 
-test("wrap_reason should encapsulate reasons", function (t, done) {
+test("wrap_reason should encapsulate reasons", function (ignore, done) {
     parseq_extended.parallel(
         [parseq_extended.wrap_reason(requestor_fail)]
     )(function (value, ignore) {
         try {
             assert.equal(Array.isArray(value), true, "value is array");
             assert.equal(value.length, 1, "value is wun element array");
-            assert.equal(typeof value[0], "object", "value element is an object");
+            assert.equal(
+                typeof value[0],
+                "object",
+                "value element is an object"
+            );
             const keys = Object.keys(value[0]);
             assert.equal(keys.length, 2, "two keys in the return object");
             assert.deepEqual(
@@ -115,18 +125,18 @@ test("wrap_reason should encapsulate reasons", function (t, done) {
             done();
 
         } catch (e) {
-           done(e);
+            done(e);
         }
     });
 });
 
-test("constant must return a constant", function (t, done) {
+test("constant must return a constant", function (ignore, done) {
     parseq_extended.constant(5)(function (value, ignore) {
         done(assert.equal(value, 5, "it should be five"));
     });
 });
 
-test("do nothing just passes a value", function (t, done) {
+test("do nothing just passes a value", function (ignore, done) {
     parseq_extended.sequence([
         parseq_extended.constant(5),
         parseq_extended.do_nothing
@@ -137,7 +147,7 @@ test("do nothing just passes a value", function (t, done) {
 
 test(
     "Requestorize transforms an unary function into a requestor",
-    function (t, done) {
+    function (ignore, done) {
         parseq_extended.sequence([
             parseq_extended.constant(5),
             parseq_extended.requestorize((x) => x + 1)
@@ -147,13 +157,13 @@ test(
     }
 );
 
-test("Map a requestor into an array", function (t, done) {
+test("Map a requestor into an array", function (ignore, done) {
     parseq_extended.sequence([
         parseq_extended.constant([1, 2, 3]),
         parseq_extended.when(
             (v) => v.length === 3,
             parseq_extended.apply_parallel(
-                parseq_extended.factory(
+                parseq_extended.factory_maker(
                     parseq_extended.requestorize((x) => x + 1)
                 )
             )
@@ -163,37 +173,43 @@ test("Map a requestor into an array", function (t, done) {
     });
 });
 
-test("A factory called without parameters passes online value to the requestor", function (t, done) {
-    parseq_extended.factory(
-        parseq_extended.requestorize(({v}) => v + 1)
-    )()(function (value, ignore) {
-       done(assert.equal(value, 4));
-    }, {v: 3});
-});
+test(
+    "A factory called without parameters passes online value to the requestor",
+    function (ignore, done) {
+        parseq_extended.factory_maker(
+            parseq_extended.requestorize(({v}) => v + 1)
+        )()(function (value, ignore) {
+            done(assert.equal(value, 4));
+        }, {v: 3});
+    }
+);
 
-test("Map a requestor which is expecting an array into an array", function (t, done) {
-    parseq_extended.sequence([
-        parseq_extended.constant([[1], [2], [3]]),
-        parseq_extended.when(
-            (v) => v.length === 3,
-            parseq_extended.apply_parallel(
-                parseq_extended.factory(
-                    parseq_extended.requestorize(([x]) => x + 1)
+test(
+    "Map a requestor which is expecting an array into an array",
+    function (ignore, done) {
+        parseq_extended.sequence([
+            parseq_extended.constant([[1], [2], [3]]),
+            parseq_extended.when(
+                (v) => v.length === 3,
+                parseq_extended.apply_parallel(
+                    parseq_extended.factory_maker(
+                        parseq_extended.requestorize(([x]) => x + 1)
+                    )
                 )
             )
-        )
-    ])(function (value, ignore) {
-        done(assert.deepEqual(value, [2, 3, 4], "it should be [2, 3, 4]"));
-    });
-});
+        ])(function (value, ignore) {
+            done(assert.deepEqual(value, [2, 3, 4], "it should be [2, 3, 4]"));
+        });
+    }
+);
 
-test("Map a requestor into an object", function (t, done) {
+test("Map a requestor into an object", function (ignore, done) {
     parseq_extended.sequence([
         parseq_extended.constant({a: 1, b: 2, c: 3}),
         parseq_extended.when(
             (v) => Object.keys(v).length === 3,
             parseq_extended.apply_parallel_object(
-                parseq_extended.factory(
+                parseq_extended.factory_maker(
                     parseq_extended.requestorize((x) => x + 1)
                 )
             )
@@ -207,11 +223,11 @@ test("Map a requestor into an object", function (t, done) {
     });
 });
 
-test("Map an array to a fallback", function (t, done) {
+test("Map an array to a fallback", function (ignore, done) {
     parseq_extended.sequence([
         parseq_extended.constant([0, 1, 2]),
         parseq_extended.apply_fallback(
-            parseq_extended.factory(
+            parseq_extended.factory_maker(
                 parseq_extended.when((v) => v === 0, requestor_fail)
             )
         )
@@ -220,7 +236,7 @@ test("Map an array to a fallback", function (t, done) {
     });
 });
 
-test("Map timeouts to a race", function (t, done) {
+test("Map timeouts to a race", function (ignore, done) {
     parseq_extended.sequence([
         parseq_extended.constant([5000, 500, 10000]),
         parseq_extended.apply_race(
@@ -241,7 +257,7 @@ test("Map timeouts to a race", function (t, done) {
     });
 });
 
-test("Map timeouts to a failing race", function (t, done) {
+test("Map timeouts to a failing race", function (ignore, done) {
     parseq_extended.sequence([
         parseq_extended.constant([5000, 500, 10000]),
         parseq_extended.apply_race(
@@ -274,7 +290,7 @@ test("Map timeouts to a failing race", function (t, done) {
     });
 });
 
-test("A promise becomes a requestor", function (t, done) {
+test("A promise becomes a requestor", function (ignore, done) {
     parseq_extended.promise_requestorize(a_little_promise)(
         function (value, ignore) {
             done(assert.equal(value, "success", "value should be success"));
@@ -282,7 +298,7 @@ test("A promise becomes a requestor", function (t, done) {
     );
 });
 
-test("a failing promise becomes a failing requestor", function (t, done) {
+test("a failing promise becomes a failing requestor", function (ignore, done) {
     const another_little_promise = new Promise(function (ignore, reject) {
         setTimeout(() => reject("failed"));
     });
@@ -293,7 +309,10 @@ test("a failing promise becomes a failing requestor", function (t, done) {
                 assert.equal(value, undefined, "value should be undefined");
                 assert.equal(
                     reason.message,
-                    "parseq.promise_requestorize: Failed when executing promise",
+                    (
+                        "parseq.promise_requestorize: Failed when executing "
+                        + "promise"
+                    ),
                     "reason should be failed"
                 );
                 assert.equal(
@@ -309,29 +328,43 @@ test("a failing promise becomes a failing requestor", function (t, done) {
     );
 });
 
-test("dynamic default imports are imported as requestors", function (t, done) {
-    parseq_extended.dynamic_default_import("./dynamic_default_import.js")(
-        function my_callback(value, reason) {
-            try {
-                assert.equal(reason, undefined, "reason should be undefined");
-                assert.equal(value?.sample, true, "sample should be true");
-                done();
-            } catch (e) {
-                done(e);
+test(
+    "dynamic default imports are imported as requestors",
+    function (ignore, done) {
+        parseq_extended.dynamic_default_import("./dynamic_default_import.js")(
+            function my_callback(value, reason) {
+                try {
+                    assert.equal(
+                        reason,
+                        undefined,
+                        "reason should be undefined"
+                    );
+                    assert.equal(value?.sample, true, "sample should be true");
+                    done();
+                } catch (e) {
+                    done(e);
+                }
             }
-        }
-    );
-});
+        );
+    }
+);
 
-test("dynamic failing default imports are detected", function (t, done) {
+test("dynamic failing default imports are detected", function (ignore, done) {
     parseq_extended.dynamic_default_import("./failing_import.js")(
         function my_callback(value, reason) {
             try {
                 assert.equal(value, undefined, "value should be undefined");
-                assert.equal(typeof reason, "object", "reason should be an object");
+                assert.equal(
+                    typeof reason,
+                    "object",
+                    "reason should be an object"
+                );
                 assert.equal(
                     reason.message,
-                    "parseq.promise_requestorize: Failed when importing ./failing_import.js",
+                    (
+                        "parseq.promise_requestorize: Failed when importing "
+                        + "./failing_import.js"
+                    ),
                     "a reason should include a message"
                 );
                 assert.equal(
@@ -347,29 +380,36 @@ test("dynamic failing default imports are detected", function (t, done) {
     );
 });
 
-test("dynamic nondefault imports are imported as requestors", function (t, done) {
-    parseq_extended.dynamic_import("./dynamic_import.js")(
-        function my_callback(value, reason) {
-            try {
-                assert.equal(reason, undefined, "reason should be undefined");
-                assert.equal(value?.sample, true, "sample should be true");
-                done();
-            } catch(e) {
-                done(e);
+test(
+    "dynamic nondefault imports are imported as requestors",
+    function (ignore, done) {
+        parseq_extended.dynamic_import("./dynamic_import.js")(
+            function my_callback(value, reason) {
+                try {
+                    assert.equal(
+                        reason,
+                        undefined,
+                        "reason should be undefined"
+                    );
+                    assert.equal(value?.sample, true, "sample should be true");
+                    done();
+                } catch (e) {
+                    done(e);
+                }
             }
-        }
-    );
-});
+        );
+    }
+);
 
 test(
     "delay requestor should execute unary function at least after x ms",
-    function (t, done) {
+    function (ignore, done) {
         const delay1s = parseq_extended.delay(1000);
         const unary = (v) => v + 1;
 
         const start = Date.now();
 
-        delay1s(unary)(function (value, reason) {
+        delay1s(unary)(function (value, ignore) {
             try {
                 assert.equal(value, 2);
                 assert.ok(Date.now() - start >= 1000);
@@ -378,120 +418,193 @@ test(
                 done(e);
             }
         }, 1);
-
-    });
-
-test("a factory should pass all the relevant parameters to the requestor", function (t, done) {
-    parseq_extended.factory(parseq_extended.requestorize((v) => v))(
-        function adapt_parameters(v) {
-            return {...v, w: 2};
-        })(function callback(value, reason) {
-            done(assert.deepEqual(value, {v: 1, w: 2}));
-        }, {v: 1});
-});
-
-test("default factory combiner should combine online value with offline values", function (t, done) {
-    parseq_extended.factory(
-        parseq_extended.requestorize((v) => v))({w: 2})(
-            function callback(value, reason) {
-                done(assert.deepEqual(value, {v: 1, w: 2}));
-            }, {v: 1});
-});
+    }
+);
 
 test(
-    "Callback exceptions in a promise context must be uncaught - generic promise",
-    function (t, done) {
+    "a factory should pass all the relevant parameters to the requestor",
+    function (ignore, done) {
+        parseq_extended.factory_maker(parseq_extended.requestorize((v) => v))(
+            function adapt_parameters(
+/*jslint-disable*/
+                v
+/*jslint-enable*/
+            ) {
+                return {
+/*jslint-disable*/
+                    ...v,
+/*jslint-enable*/
+                    w: 2
+                };
+            }
+        )(
+            function callback(value, ignore) {
+                done(assert.deepEqual(value, {v: 1, w: 2}));
+            },
+            {v: 1}
+        );
+    }
+);
+
+test(
+    "default factory combiner should combine online value with offline values",
+    function (ignore, done) {
+        parseq_extended.factory_maker(
+            parseq_extended.requestorize((v) => v)
+        )({w: 2})(
+            function callback(value, ignore) {
+                done(assert.deepEqual(value, {v: 1, w: 2}));
+            },
+            {v: 1}
+        );
+    }
+);
+
+test(
+    "Callback exceptions in a promise must be uncaught - generic promise",
+    function (ignore, done) {
         hasThrown(
             "unhandledRejection",
             "generic promise failed!",
-            t,
             done
         );
         parseq_extended.sequence([
             parseq_extended.promise_requestorize(a_little_promise)
         ])(
+/*jslint-disable*/
             function (value, ignore) {
                 throw myError("generic promise failed!");
             }
+/*jslint-enable*/
         );
     }
 );
 
 test(
     "Callback exceptions in a promise context must be uncaught - import",
-    function (t, done) {
-        hasThrown("unhandledRejection", "Callback failed in import", t , done);
+    function (ignore, done) {
+        hasThrown("unhandledRejection", "Callback failed in import", done);
 
         parseq_extended.sequence([
             parseq_extended.dynamic_import("./dynamic_import.js")
-        ])(function my_callback(value, reason) {
-            throw myError("Callback failed in import");
-        });
+        ])(
+/*jslint-disable*/
+            function my_callback(value, reason) {
+                throw myError("Callback failed in import");
+            }
+/*jslint-enable*/
+        );
     }
 );
 
 test(
-    "Callback exceptions in a promise context must be uncaught - default import",
-    function (t, done) {
-        hasThrown("unhandledRejection", "Callback failed in default import", t , done);
+    "Callback exceptions in a promise must be uncaught - default import",
+    function (ignore, done) {
+        hasThrown(
+            "unhandledRejection",
+            "Callback failed in default import",
+            done
+        );
 
         parseq_extended.sequence([
             parseq_extended.dynamic_import("./dynamic_default_import.js")
-        ])(function my_callback(value, reason) {
-            throw myError("Callback failed in default import");
-        });
+        ])(
+/*jslint-disable*/
+            function my_callback(value, reason) {
+                throw myError("Callback failed in default import");
+            }
+/*jslint-enable*/
+        );
     }
 );
 
-test("Callback exceptions in a promise context must be uncaught - import without factory", function (t, done) {
-    hasThrown("unhandledRejection", "Callback failed in import without factory", t , done);
-
-    parseq_extended.dynamic_import("./dynamic_import.js")(
-        function my_callback(value, reason) {
-            throw myError("Callback failed in import without factory");
-        }
-    );
-});
-
-test("Callback exceptions in a promise context must be uncaught - default import without factory", function (t, done) {
-    hasThrown("uncaughtException", "Callback failed in default import without factory", t , done);
-
-    parseq_extended.dynamic_default_import("./dynamic_default_import.js")(
-        function my_callback(value, reason) {
-            throw myError("Callback failed in default import without factory");
-        }
-    );
-});
-
-test("Final callback exceptions must crash the program", function (t, done) {
-    hasThrown("uncaughtException", "Booom!", t, done);
-
-    let count = 0;
-    parseq_extended.sequence([
-        parseq_extended.sequence([
-            parseq_extended.constant(5)
-        ])
-    ])(function (value, reason) {
-        if (count) {
-            return done(new Error("callback called twice"));
-        }
-        count += 1;
-        throw myError("Booom!");
-    });
-});
-
-test("parseq should provide a requestor to merge properties to a value", function (t, done) {
-    parseq_extended.parallel_merge({
-        prop_one: parseq_extended.constant(1),
-        prop_two: parseq_extended.requestorize(({prop_zero}) => prop_zero + 5)
-    })(function (value, ignore) {
-        const expected = Object.assign(
-            Object.create(null), {
-                prop_one: 1,
-                prop_two: 5,
-                prop_zero: 0
-            }
+test(
+    "Callback exceptions in a promise must be uncaught- import without factory",
+    function (ignore, done) {
+        hasThrown(
+            "unhandledRejection",
+            "Callback failed in import without factory",
+            done
         );
-        done(assert.deepEqual(value, expected));
-    }, {prop_zero: 0});
-});
+
+        parseq_extended.dynamic_import("./dynamic_import.js")(
+/*jslint-disable*/
+            function my_callback(value, reason) {
+                throw myError("Callback failed in import without factory");
+            }
+/*jslint-enable*/
+        );
+    }
+);
+
+test(
+    "Callback exceptions in promise must be uncaught - default without factory",
+    function (ignore, done) {
+        hasThrown(
+            "uncaughtException",
+            "Callback failed in default import without factory",
+            done
+        );
+
+        parseq_extended.dynamic_default_import("./dynamic_default_import.js")(
+/*jslint-disable*/
+            function my_callback(value, reason) {
+                throw myError(
+                    "Callback failed in default import without factory"
+                );
+            }
+/*jslint-enable*/
+        );
+    }
+);
+
+test(
+    "Final callback exceptions must crash the program",
+    function (ignore, done) {
+        hasThrown("uncaughtException", "Booom!", done);
+
+/*jslint-disable*/
+        let count = 0;
+/*jslint-enable*/
+        parseq_extended.sequence([
+            parseq_extended.sequence([
+                parseq_extended.constant(5)
+            ])
+        ])(
+/*jslint-disable*/
+            function (value, reason) {
+                if (count) {
+                    return done(new Error("callback called twice"));
+                }
+                count += 1;
+                throw myError("Booom!");
+            }
+/*jslint-enable*/
+        );
+    }
+);
+
+test(
+    "parseq should provide a requestor to merge properties to a value",
+    function (ignore, done) {
+        parseq_extended.parallel_merge({
+            prop_one: parseq_extended.constant(1),
+            prop_two: parseq_extended.requestorize(
+                ({prop_zero}) => prop_zero + 5
+            )
+        })(
+            function (value, ignore) {
+                const expected = Object.assign(
+                    Object.create(null),
+                    {
+                        prop_one: 1,
+                        prop_two: 5,
+                        prop_zero: 0
+                    }
+                );
+                done(assert.deepEqual(value, expected));
+            },
+            {prop_zero: 0}
+        );
+    }
+);
