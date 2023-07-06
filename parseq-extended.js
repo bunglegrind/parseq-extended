@@ -6,28 +6,19 @@
     */
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
-    catch, constant, create, default, delay, do_nothing, dynamic_default_import,
-    dynamic_import, evidence, factory_maker, fallback, forEach, freeze, if_else,
-    isArray, keys, length, make_reason, make_requestor_factory, map, parallel,
-    parallel_merge, parallel_object, promise_requestorize, race, reason,
-    requestorize, sequence, then, value, when, wrap_reason
+    catch, check_callback, constant, create, default, delay, do_nothing,
+    dynamic_default_import, dynamic_import, evidence, factory_maker, fallback,
+    forEach, freeze, if_else, isArray, keys, make_reason,
+    make_requestor_factory, map, parallel, parallel_merge, parallel_object,
+    promise_requestorize, race, reason, requestorize, sequence, then, value,
+    when, wrap_reason
 */
 
 
 import parseq from "./parseq.js";
 
-function check_callback(callback, factory_name) {
-    if (typeof callback !== "function" || callback.length !== 2) {
-        throw make_reason(
-            factory_name,
-            "Not a callback function.",
-            callback
-        );
-    }
-}
-
 function callback_factory(cb, factory_name) {
-    check_callback(cb, factory_name);
+    parseq.check_callback(cb, factory_name);
     let is_called = false;
     return function callback(value, reason) {
         if (!is_called) {
@@ -42,17 +33,6 @@ function callback_factory(cb, factory_name) {
     };
 }
 
-function make_reason(factory_name, excuse, evidence) {
-    const reason = new Error("parseq." + factory_name + (
-        excuse === undefined
-        ? ""
-        : ": " + excuse
-    ));
-    reason.evidence = evidence;
-
-    return reason;
-}
-
 function delay(ms, name = "delay") {
     return function (unary) {
         return function delay_requestor(cb, v) {
@@ -64,7 +44,7 @@ function delay(ms, name = "delay") {
                 } catch (error) {
                     return callback(
                         undefined,
-                        make_reason(name, "", error)
+                        parseq.make_reason(name, "", error)
                     );
                 }
                 return callback(result);
@@ -119,7 +99,7 @@ function apply_race(
         } catch (e) {
             return callback(
                 undefined,
-                make_reason("apply_race", "", e)
+                parseq.make_reason("apply_race", "", e)
             );
         }
     };
@@ -139,7 +119,7 @@ function apply_fallback(
         } catch (e) {
             return callback(
                 undefined,
-                make_reason("apply_fallback", "", e)
+                parseq.make_reason("apply_fallback", "", e)
             );
         }
     };
@@ -169,7 +149,7 @@ function apply_parallel(
         } catch (e) {
             return callback(
                 undefined,
-                make_reason("apply_parallel", "", e)
+                parseq.make_reason("apply_parallel", "", e)
             );
         }
     };
@@ -200,7 +180,7 @@ function apply_parallel_object(
         } catch (e) {
             return callback(
                 undefined,
-                make_reason("apply_parallel_object", "", e)
+                parseq.make_reason("apply_parallel_object", "", e)
             );
         }
     };
@@ -230,7 +210,7 @@ function parallel_merge(obj, opt_obj, time_limit, time_option, throttle) {
 
 function promise_requestorize(promise, action = "executing promise") {
     return function (callback) {
-        check_callback(callback, action);
+        parseq.check_callback(callback, action);
         let is_called = false;
         function promise_callback(value, reason) {
             if (!is_called) {
@@ -239,7 +219,7 @@ function promise_requestorize(promise, action = "executing promise") {
                     return callback(
                         undefined,
 //first callback call: promise has thrown
-                        make_reason(
+                        parseq.make_reason(
                             "promise_requestorize",
                             `Failed when ${action}`,
                             reason
@@ -304,7 +284,7 @@ function factory_maker(requestor, factory_name = "factory") {
             adapter = default_adapter(adapter);
         }
         return function req(cb, value) {
-            check_callback(cb, factory_name);
+            parseq.check_callback(cb, factory_name);
             return parseq.sequence([
                 requestorize(adapter),
                 requestor
@@ -338,5 +318,5 @@ export default Object.freeze({
     delay,
     factory_maker,
     parallel_merge,
-    make_reason
+    make_reason: parseq.make_reason
 });
