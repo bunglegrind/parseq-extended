@@ -10,8 +10,8 @@
     dynamic_default_import, dynamic_import, evidence, factory_maker, fallback,
     forEach, freeze, if_else, isArray, keys, make_reason,
     make_requestor_factory, map, parallel, parallel_merge, parallel_object,
-    promise_requestorize, race, reason, requestorize, sequence, then, value,
-    when, wrap_reason
+    promise_requestorize, race, reason, requestorize, sequence, stringify, then,
+    try_catcher,value, when, wrap_reason
 */
 
 
@@ -30,6 +30,31 @@ function callback_factory(cb, factory_name) {
             err.evidence = reason;
         }
         throw err;
+    };
+}
+
+function try_catcher(requestor, name = "try-catcher") {
+    return function (callback, value) {
+        try {
+            return requestor(callback, value);
+        } catch (e) {
+            const jsonValue = JSON.stringify(
+                value,
+                (ignore, v) => (
+                    v === undefined
+                    ? "undefined"
+                    : v
+                )
+            );
+            return callback(
+                undefined,
+                parseq.make_reason(
+                    name,
+                    `catched requestor error ${jsonValue}`,
+                    e
+                )
+            );
+        }
     };
 }
 
@@ -318,5 +343,6 @@ export default Object.freeze({
     delay,
     factory_maker,
     parallel_merge,
-    make_reason: parseq.make_reason
+    make_reason: parseq.make_reason,
+    try_catcher
 });
