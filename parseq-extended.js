@@ -1,9 +1,9 @@
 /*jslint
     unordered
-    */
+*/
 /*global
     setTimeout, clearTimeout
-    */
+*/
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
     catch, check_callback, constant, create, default, delay, do_nothing,
@@ -13,7 +13,6 @@
     promise_requestorize, race, reason, requestorize, sequence, stringify, then,
     try_catcher,value, when, wrap_reason
 */
-
 
 import parseq from "./parseq.js";
 
@@ -25,7 +24,7 @@ function callback_factory(cb, factory_name) {
             is_called = true;
             return cb(value, reason);
         }
-        const err = new Error(`Callback failed`);
+        const err = new Error(`Callback failed: ${factory_name}`);
         if (reason) {
             err.evidence = reason;
         }
@@ -115,18 +114,11 @@ function apply_race(
 ) {
     return function (cb, value) {
         const callback = callback_factory(cb, "apply_race");
-        try {
-            return parseq.race(
-                value.map(requestor_factory),
-                time_limit,
-                throttle
-            )(callback);
-        } catch (e) {
-            return callback(
-                undefined,
-                parseq.make_reason("apply_race", "", e)
-            );
-        }
+        try_catcher(parseq.race(
+            value.map(requestor_factory),
+            time_limit,
+            throttle
+        ), "apply_race")(callback);
     };
 }
 
@@ -136,17 +128,10 @@ function apply_fallback(
 ) {
     return function (cb, value) {
         const callback = callback_factory(cb, "apply_fallback");
-        try {
-            return parseq.fallback(
-                value.map(requestor_factory),
-                time_limit
-            )(callback);
-        } catch (e) {
-            return callback(
-                undefined,
-                parseq.make_reason("apply_fallback", "", e)
-            );
-        }
+        try_catcher(parseq.fallback(
+            value.map(requestor_factory),
+            time_limit
+        ), "apply_fallback")(callback);
     };
 }
 
@@ -159,24 +144,17 @@ function apply_parallel(
 ) {
     return function (cb, value) {
         const callback = callback_factory(cb, "apply_parallel");
-        try {
-            return parseq.parallel(
-                value.map(requestor_factory),
-                (
-                    typeof optional_requestor_factory === "function"
-                    ? value.map(optional_requestor_factory)
-                    : []
-                ),
-                time_limit,
-                time_option,
-                throttle
-            )(callback);
-        } catch (e) {
-            return callback(
-                undefined,
-                parseq.make_reason("apply_parallel", "", e)
-            );
-        }
+        try_catcher(parseq.parallel(
+            value.map(requestor_factory),
+            (
+                typeof optional_requestor_factory === "function"
+                ? value.map(optional_requestor_factory)
+                : []
+            ),
+            time_limit,
+            time_option,
+            throttle
+        ), "apply_parallel")(callback);
     };
 }
 
@@ -186,29 +164,21 @@ function apply_parallel_object(
     time_option,
     throttle
 ) {
-    return function (cb, value) {
+    return try_catcher(function (cb, value) {
         const callback = callback_factory(cb, "apply_parallel_object");
-        try {
-            const keys = Object.keys(value);
-            const required_obj_requestor = Object.create(null);
-            keys.forEach(function (key) {
-                required_obj_requestor[key] = requestor_factory(value[key]);
-            });
-            return parseq.parallel_object(
-                required_obj_requestor,
-                undefined,
-                time_limit,
-                time_option,
-                throttle
-            )(callback);
-
-        } catch (e) {
-            return callback(
-                undefined,
-                parseq.make_reason("apply_parallel_object", "", e)
-            );
-        }
-    };
+        const keys = Object.keys(value);
+        const required_obj_requestor = Object.create(null);
+        keys.forEach(function (key) {
+            required_obj_requestor[key] = requestor_factory(value[key]);
+        });
+        return parseq.parallel_object(
+            required_obj_requestor,
+            undefined,
+            time_limit,
+            time_option,
+            throttle
+        )(callback);
+    }, "apply_parallel_object");
 }
 
 function parallel_merge(obj, opt_obj, time_limit, time_option, throttle) {

@@ -608,3 +608,28 @@ test(
         );
     }
 );
+
+test("try-catcher catches requestor errors", function (ignore, done) {
+    parseq_extended.sequence([
+        parseq_extended.constant(null),
+        parseq_extended.apply_parallel_object(
+            parseq_extended.factory_maker(
+                parseq_extended.requestorize((x) => x + 1),
+                "sum"
+            )
+        )
+    ])(function (value, reason) {
+        assert.equal(value, undefined, "failed eventual task");
+        assert.notEqual(reason.evidence, undefined, "evidence explains");
+        assert.deepEqual(
+            reason.evidence.message,
+            "Cannot convert undefined or null to object",
+            "error is catched"
+        )
+        done(assert.deepEqual(
+            reason.message,
+            "parseq.apply_parallel_object: catched requestor error null",
+            "it should signal a catch"
+        ));
+    });
+});
