@@ -1,12 +1,13 @@
 /*jslint
     node, unordered, fart
 */
+
 /*property
     a, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, b, c, constant, create, deepEqual, delay, do_nothing,
     dynamic_default_import, dynamic_import, equal, evidence, factory_maker,
-    fallback, isArray, keys, length, listeners, message, myFlag, now, ok, on,
-    parallel, parallel_merge, parallel_object, prependListener,
+    fallback, isArray, keys, length, listeners, message, myFlag, notEqual, now,
+    ok, on, parallel, parallel_merge, parallel_object, prependListener,
     promise_requestorize, prop_one, prop_two, prop_zero, race, reason,
     removeAllListeners, removeListener, requestorize, sample, sequence,
     toString, v, value, w, when, wrap_reason
@@ -625,7 +626,7 @@ test("try-catcher catches requestor errors", function (ignore, done) {
             reason.evidence.message,
             "Cannot convert undefined or null to object",
             "error is catched"
-        )
+        );
         done(assert.deepEqual(
             reason.message,
             "parseq.apply_parallel_object: catched requestor error null",
