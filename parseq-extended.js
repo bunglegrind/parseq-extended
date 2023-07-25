@@ -248,7 +248,7 @@ function factory_maker(requestor, factory_name = "factory") {
                     && !Array.isArray(precomputed)
                 ) {
                     return Object.assign(
-                        {},
+                        Object.create(null),
                         precomputed,
                         value
                     );

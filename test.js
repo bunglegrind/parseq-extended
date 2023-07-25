@@ -454,7 +454,10 @@ test(
             parseq_extended.requestorize((v) => v)
         )({w: 2})(
             function callback(value, ignore) {
-                done(assert.deepEqual(value, {v: 1, w: 2}));
+                done(assert.deepEqual(value, Object.assign(
+                    Object.create(null),
+                    {v: 1, w: 2}
+                )));
             },
             {v: 1}
         );
