@@ -9,7 +9,7 @@
     fallback, isArray, keys, length, listeners, message, myFlag, notEqual, now,
     ok, on, parallel, parallel_merge, parallel_object, prependListener,
     promise_requestorize, prop_one, prop_two, prop_zero, race, reason,
-    removeAllListeners, removeListener, requestorize, sample, sequence,
+    removeAllListeners, removeListener, requestorize, sample, sequence, tap,
     toString, v, value, w, when, wrap_reason
 */
 
@@ -637,3 +637,38 @@ test("try-catcher catches requestor errors", function (ignore, done) {
         ));
     });
 });
+
+test(
+    "tap executes requestor for only its side effects",
+    function (ignore, done) {
+        parseq_extended.sequence([
+            parseq_extended.constant(5),
+            parseq_extended.tap(
+                parseq_extended.delay(100)(function (value) {
+                    assert.equal(value, 5);
+                    return value + 1;
+                })
+            )
+        ])(function (value, ignore) {
+            done(assert.equal(value, 5));
+        });
+    }
+);
+
+test(
+    "tap still blocks eventual executions in case of errors",
+    function (ignore, done) {
+        parseq_extended.sequence([
+            parseq_extended.constant(5),
+            parseq_extended.tap(
+                parseq_extended.delay(100)(function () {
+                    throw "Boom!";
+                })
+            ),
+            parseq_extended.do_nothing
+        ])(function (value, reason) {
+            assert.equal(value, undefined);
+            done(assert.equal(reason.evidence, "Boom!"));
+        });
+    }
+);
