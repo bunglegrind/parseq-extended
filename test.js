@@ -1,14 +1,13 @@
 /*jslint
     node, unordered, fart
 */
-
 /*property
     a, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, b, c, constant, create, deepEqual, delay, do_nothing,
     dynamic_default_import, dynamic_import, equal, evidence, factory_maker,
     fallback, isArray, keys, length, listeners, message, myFlag, notEqual, now,
     ok, on, parallel, parallel_merge, parallel_object, prependListener,
-    promise_requestorize, prop_one, prop_two, prop_zero, race, reason,
+    promise_requestorize, prop_one, prop_two, prop_zero, race, reason, reduce,
     removeAllListeners, removeListener, requestorize, sample, sequence, tap,
     toString, v, value, w, when, wrap_reason
 */
@@ -27,14 +26,12 @@ const a_little_promise = new Promise(function (resolve) {
     setTimeout(() => resolve("success"), 0);
 });
 
-/*jslint-disable*/
-function myError(msg) {
+function my_error(msg) {
     const err = new Error(msg);
     err.myFlag = true;
 
     return err;
 }
-/*jslint-enable*/
 
 before(function () {
     const defaultExceptionListener = process.listeners("uncaughtException")[0];
@@ -102,7 +99,8 @@ test("parseq-extended should include parseq", function () {
 test("wrap_reason should encapsulate reasons", function (ignore, done) {
     parseq_extended.parallel(
         [parseq_extended.wrap_reason(requestor_fail)]
-    )(function (value, ignore) {
+    )(function (value, reason) {
+        assert.ok(value !== undefined, reason);
         try {
             assert.equal(Array.isArray(value), true, "value is array");
             assert.equal(value.length, 1, "value is wun element array");
@@ -132,7 +130,8 @@ test("wrap_reason should encapsulate reasons", function (ignore, done) {
 });
 
 test("constant must return a constant", function (ignore, done) {
-    parseq_extended.constant(5)(function (value, ignore) {
+    parseq_extended.constant(5)(function (value, reason) {
+        assert.ok(value !== undefined, reason);
         done(assert.equal(value, 5, "it should be five"));
     });
 });
@@ -141,7 +140,8 @@ test("do nothing just passes a value", function (ignore, done) {
     parseq_extended.sequence([
         parseq_extended.constant(5),
         parseq_extended.do_nothing
-    ])(function (value, ignore) {
+    ])(function (value, reason) {
+        assert.ok(value !== undefined, reason);
         done(assert.equal(value, 5, "it should be five"));
     });
 });
@@ -152,7 +152,8 @@ test(
         parseq_extended.sequence([
             parseq_extended.constant(5),
             parseq_extended.requestorize((x) => x + 1)
-        ])(function (value, ignore) {
+        ])(function (value, reason) {
+            assert.ok(value !== undefined, reason);
             done(assert.equal(value, 6, "it should be six"));
         });
     }
@@ -169,7 +170,8 @@ test("Map a requestor into an array", function (ignore, done) {
                 )
             )
         )
-    ])(function (value, ignore) {
+    ])(function (value, reason) {
+        assert.ok(value !== undefined, reason);
         done(assert.deepEqual(value, [2, 3, 4], "it should be [2, 3, 4]"));
     });
 });
@@ -179,7 +181,8 @@ test(
     function (ignore, done) {
         parseq_extended.factory_maker(
             parseq_extended.requestorize(({v}) => v + 1)
-        )()(function (value, ignore) {
+        )()(function (value, reason) {
+            assert.ok(value !== undefined, reason);
             done(assert.equal(value, 4));
         }, {v: 3});
     }
@@ -198,7 +201,8 @@ test(
                     )
                 )
             )
-        ])(function (value, ignore) {
+        ])(function (value, reason) {
+            assert.ok(value !== undefined, reason);
             done(assert.deepEqual(value, [2, 3, 4], "it should be [2, 3, 4]"));
         });
     }
@@ -215,7 +219,8 @@ test("Map a requestor into an object", function (ignore, done) {
                 )
             )
         )
-    ])(function (value, ignore) {
+    ])(function (value, reason) {
+        assert.ok(value !== undefined, reason);
         done(assert.deepEqual(
             value,
             Object.assign(Object.create(null), {a: 2, b: 3, c: 4}),
@@ -232,7 +237,8 @@ test("Map an array to a fallback", function (ignore, done) {
                 parseq_extended.when((v) => v === 0, requestor_fail)
             )
         )
-    ])(function (value, ignore) {
+    ])(function (value, reason) {
+        assert.ok(value !== undefined, reason);
         done(assert.deepEqual(value, 1, "it should be 1"));
     });
 });
@@ -253,7 +259,8 @@ test("Map timeouts to a race", function (ignore, done) {
                 };
             }
         )
-    ])(function (value, ignore) {
+    ])(function (value, reason) {
+        assert.ok(value !== undefined, reason);
         done(assert.equal(value, "success 500", "timeout 500 should win"));
     });
 });
@@ -293,7 +300,8 @@ test("Map timeouts to a failing race", function (ignore, done) {
 
 test("A promise becomes a requestor", function (ignore, done) {
     parseq_extended.promise_requestorize(a_little_promise)(
-        function (value, ignore) {
+        function (value, reason) {
+            assert.ok(value !== undefined, reason);
             done(assert.equal(value, "success", "value should be success"));
         }
     );
@@ -410,7 +418,8 @@ test(
 
         const start = Date.now();
 
-        delay1s(unary)(function (value, ignore) {
+        delay1s(unary)(function (value, reason) {
+            assert.ok(value !== undefined, reason);
             try {
                 assert.equal(value, 2);
                 assert.ok(Date.now() - start >= 1000);
@@ -439,7 +448,8 @@ test(
                 };
             }
         )(
-            function callback(value, ignore) {
+            function callback(value, reason) {
+                assert.ok(value !== undefined, reason);
                 done(assert.deepEqual(value, {v: 1, w: 2}));
             },
             {v: 1}
@@ -453,7 +463,8 @@ test(
         parseq_extended.factory_maker(
             parseq_extended.requestorize((v) => v)
         )({w: 2})(
-            function callback(value, ignore) {
+            function callback(value, reason) {
+                assert.ok(value !== undefined, reason);
                 done(assert.deepEqual(value, Object.assign(
                     Object.create(null),
                     {v: 1, w: 2}
@@ -475,11 +486,10 @@ test(
         parseq_extended.sequence([
             parseq_extended.promise_requestorize(a_little_promise)
         ])(
-/*jslint-disable*/
-            function (value, ignore) {
-                throw myError("generic promise failed!");
+            function (value, reason) {
+                assert.ok(value !== undefined, reason);
+                throw my_error("generic promise failed!");
             }
-/*jslint-enable*/
         );
     }
 );
@@ -492,11 +502,10 @@ test(
         parseq_extended.sequence([
             parseq_extended.dynamic_import("./dynamic_import.js")
         ])(
-/*jslint-disable*/
             function my_callback(value, reason) {
-                throw myError("Callback failed in import");
+                assert.ok(value !== undefined, reason);
+                throw my_error("Callback failed in import");
             }
-/*jslint-enable*/
         );
     }
 );
@@ -513,11 +522,10 @@ test(
         parseq_extended.sequence([
             parseq_extended.dynamic_import("./dynamic_default_import.js")
         ])(
-/*jslint-disable*/
             function my_callback(value, reason) {
-                throw myError("Callback failed in default import");
+                assert.ok(value !== undefined, reason);
+                throw my_error("Callback failed in default import");
             }
-/*jslint-enable*/
         );
     }
 );
@@ -532,11 +540,10 @@ test(
         );
 
         parseq_extended.dynamic_import("./dynamic_import.js")(
-/*jslint-disable*/
             function my_callback(value, reason) {
-                throw myError("Callback failed in import without factory");
+                assert.ok(value !== undefined, reason);
+                throw my_error("Callback failed in import without factory");
             }
-/*jslint-enable*/
         );
     }
 );
@@ -551,13 +558,12 @@ test(
         );
 
         parseq_extended.dynamic_default_import("./dynamic_default_import.js")(
-/*jslint-disable*/
             function my_callback(value, reason) {
-                throw myError(
+                assert.ok(value !== undefined, reason);
+                throw my_error(
                     "Callback failed in default import without factory"
                 );
             }
-/*jslint-enable*/
         );
     }
 );
@@ -567,23 +573,21 @@ test(
     function (ignore, done) {
         hasThrown("uncaughtException", "Booom!", done);
 
-/*jslint-disable*/
         let count = 0;
-/*jslint-enable*/
+
         parseq_extended.sequence([
             parseq_extended.sequence([
                 parseq_extended.constant(5)
             ])
         ])(
-/*jslint-disable*/
             function (value, reason) {
+                assert.ok(value !== undefined, reason);
                 if (count) {
                     return done(new Error("callback called twice"));
                 }
                 count += 1;
-                throw myError("Booom!");
+                throw my_error("Booom!");
             }
-/*jslint-enable*/
         );
     }
 );
@@ -597,7 +601,8 @@ test(
                 ({prop_zero}) => prop_zero + 5
             )
         })(
-            function (value, ignore) {
+            function (value, reason) {
+                assert.ok(value !== undefined, reason);
                 const expected = Object.assign(
                     Object.create(null),
                     {
@@ -649,7 +654,8 @@ test(
                     return value + 1;
                 })
             )
-        ])(function (value, ignore) {
+        ])(function (value, reason) {
+            assert.ok(value !== undefined, reason);
             done(assert.equal(value, 5));
         });
     }
@@ -672,3 +678,71 @@ test(
         });
     }
 );
+
+test("Reduce without throttle is like parallel", function (ignore, done) {
+    const reducer = (acc, x) => acc + x;
+    parseq_extended.reduce(
+        reducer,
+        0,
+        [
+            parseq_extended.constant(3),
+            parseq_extended.constant(5),
+            parseq_extended.constant(7),
+            parseq_extended.constant(3)
+        ]
+    )(function (value, reason) {
+        assert.ok(value !== undefined, reason);
+        done(assert.equal(value, 18));
+    });
+});
+
+test("Reduce with throttle = 1", function (ignore, done) {
+    const reducer = (acc, x) => acc + x;
+    parseq_extended.reduce(
+        reducer,
+        0,
+        [
+            parseq_extended.constant(3),
+            parseq_extended.constant(5),
+            parseq_extended.constant(7),
+            parseq_extended.constant(3)
+        ],
+        1
+    )(function (value, reason) {
+        assert.ok(value !== undefined, reason);
+        done(assert.equal(value, 18));
+    });
+});
+
+test("Reduce with throttle = 3", function (ignore, done) {
+    const throttle = 3;
+    const reducer = function (acc, x, ignore, array) {
+        assert.equal(array.length, throttle);
+        return acc + x;
+    };
+    parseq_extended.reduce(
+        reducer,
+        0,
+        [
+            parseq_extended.constant(3),
+            parseq_extended.constant(5),
+            parseq_extended.constant(7),
+            parseq_extended.constant(3),
+            parseq_extended.constant(5),
+            parseq_extended.constant(7),
+            parseq_extended.constant(3),
+            parseq_extended.constant(5),
+            parseq_extended.constant(7),
+            parseq_extended.constant(3),
+            parseq_extended.constant(5),
+            parseq_extended.constant(7),
+            parseq_extended.constant(3),
+            parseq_extended.constant(5),
+            parseq_extended.constant(7)
+        ],
+        throttle
+    )(function (value, reason) {
+        assert.ok(value !== undefined, reason);
+        done(assert.equal(value, 75));
+    });
+});

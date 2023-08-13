@@ -8,10 +8,10 @@
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
     catch, check_callback, constant, create, default, delay, do_nothing,
     dynamic_default_import, dynamic_import, evidence, factory_maker, fallback,
-    forEach, freeze, if_else, isArray, keys, make_reason,
+    forEach, freeze, if_else, isArray, keys, length, make_reason,
     make_requestor_factory, map, parallel, parallel_merge, parallel_object,
-    promise_requestorize, race, reason, requestorize, sequence, stringify, tap,
-    then, try_catcher,value, when, wrap_reason
+    promise_requestorize, race, reason, reduce, requestorize, sequence, slice,
+    stringify, tap, then, try_catcher, value, when, wrap_reason
 */
 
 import parseq from "./parseq.js";
@@ -287,6 +287,32 @@ function tap(requestor) {
     };
 }
 
+function reduce(
+    reducer,
+    initial_value,
+    requestor_array,
+    throttle
+) {
+    throttle = throttle || requestor_array.length;
+
+    return parseq.sequence([
+        parseq.parallel(requestor_array.slice(0, throttle)),
+        requestorize(function (array) {
+            return array.reduce(reducer, initial_value);
+        }),
+        if_else(
+            () => throttle >= requestor_array.length,
+            do_nothing,
+            (callback, value) => reduce(
+                reducer,
+                value,
+                requestor_array.slice(throttle),
+                throttle
+            )(callback, value)
+        )
+    ]);
+}
+
 export default Object.freeze({
 /*jslint-disable*/
     ...parseq,
@@ -310,5 +336,6 @@ export default Object.freeze({
     parallel_merge,
     make_reason: parseq.make_reason,
     try_catcher,
-    tap
+    tap,
+    reduce
 });
