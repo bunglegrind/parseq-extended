@@ -22,7 +22,7 @@ function requestor_fail(callback) {
     setTimeout(callback, 0, undefined, "failed");
 }
 
-const a_little_promise = new Promise(function (resolve) {
+const a_little_promise_thunk = () => new Promise(function (resolve) {
     setTimeout(() => resolve("success"), 0);
 });
 
@@ -298,8 +298,8 @@ test("Map timeouts to a failing race", function (ignore, done) {
     });
 });
 
-test("A promise becomes a requestor", function (ignore, done) {
-    parseq_extended.promise_requestorize(a_little_promise)(
+test("A promise thunk becomes a requestor", function (ignore, done) {
+    parseq_extended.promise_requestorize(a_little_promise_thunk)(
         function (value, reason) {
             assert.ok(value !== undefined, reason);
             done(assert.equal(value, "success", "value should be success"));
@@ -307,35 +307,68 @@ test("A promise becomes a requestor", function (ignore, done) {
     );
 });
 
-test("a failing promise becomes a failing requestor", function (ignore, done) {
-    const another_little_promise = new Promise(function (ignore, reject) {
-        setTimeout(() => reject("failed"));
-    });
-
-    parseq_extended.promise_requestorize(another_little_promise)(
-        function (value, reason) {
-            try {
-                assert.equal(value, undefined, "value should be undefined");
-                assert.equal(
-                    reason.message,
-                    (
-                        "parseq.promise_requestorize: Failed when executing "
-                        + "promise"
-                    ),
-                    "reason should be failed"
-                );
-                assert.equal(
-                    reason.evidence,
-                    "failed",
-                    "reason should be failed"
-                );
-                done();
-            } catch (e) {
-                done(e);
-            }
+test(
+    "Not passing a promise thunk to promise_requestorize throws",
+    function (ignore, done) {
+        try {
+            parseq_extended.promise_requestorize(
+                (ignore) => a_little_promise_thunk
+            )(
+                function (value, reason) {
+                    assert.ok(value !== undefined, reason);
+                }
+            );
+        } catch (e) {
+            assert.equal(e.message, "Not a thunk when executing promise");
         }
-    );
-});
+
+        parseq_extended.promise_requestorize(() => 4)(
+            function (value, reason) {
+                assert.ok(value === undefined, value);
+                done(
+                    assert.equal(
+                        reason.evidence.message,
+                        "Not a promise when executing promise"
+                    )
+                );
+            }
+        );
+    }
+);
+
+
+test(
+    "a failing promise thunk becomes a failing requestor",
+    function (ignore, done) {
+        parseq_extended.promise_requestorize(function () {
+            return new Promise(function (ignore, reject) {
+                setTimeout(() => reject("failed"));
+            });
+        })(
+            function (value, reason) {
+                try {
+                    assert.equal(value, undefined, "value should be undefined");
+                    assert.equal(
+                        reason.message,
+                        (
+                            "parseq.promise_requestorize: Failed when "
+                            + "executing promise"
+                        ),
+                        "reason should be failed"
+                    );
+                    assert.equal(
+                        reason.evidence,
+                        "failed",
+                        "reason should be failed"
+                    );
+                    done();
+                } catch (e) {
+                    done(e);
+                }
+            }
+        );
+    }
+);
 
 test(
     "dynamic default imports are imported as requestors",
@@ -484,7 +517,7 @@ test(
             done
         );
         parseq_extended.sequence([
-            parseq_extended.promise_requestorize(a_little_promise)
+            parseq_extended.promise_requestorize(a_little_promise_thunk)
         ])(
             function (value, reason) {
                 assert.ok(value !== undefined, reason);

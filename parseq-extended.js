@@ -14,6 +14,7 @@
     stringify, tap, then, try_catcher, value, when, wrap_reason
 */
 
+
 import parseq from "./parseq.js";
 
 function try_catcher(requestor, name = "try-catcher") {
@@ -187,7 +188,16 @@ function parallel_merge(obj, opt_obj, time_limit, time_option, throttle) {
     };
 }
 
-function promise_requestorize(promise, action = "executing promise") {
+const is_thunk = (f) => typeof f === "function" && !f.length;
+const is_promise = (p) => typeof p?.then === "function";
+
+function promise_requestorize(promise_thunk, action = "executing promise") {
+    if (!is_thunk(promise_thunk)) {
+        const err = new Error(`Not a thunk when ${action}`);
+        err.evidence = promise_thunk;
+        throw err;
+    }
+
     return function (callback) {
         parseq.check_callback(callback, action);
         let is_called = false;
@@ -208,9 +218,17 @@ function promise_requestorize(promise, action = "executing promise") {
                 return callback(value);
             }
 //second callback call: callback has thrown
-            const err = new Error(`Callback failed when ${action}`);
-            err.evidence = reason;
-            throw err;
+            const e = new Error(`Callback failed when ${action}`);
+            e.evidence = reason;
+            throw e;
+        }
+        const promise = promise_thunk();
+        if (!is_promise(promise)) {
+            const ee = new Error(`Not a promise when ${action}`);
+            return promise_callback(
+                undefined,
+                ee
+            );
         }
         promise.then(promise_callback).catch(function (e) {
 //at this point we still don't know if the promise or the callback has thrown
@@ -223,7 +241,9 @@ function promise_requestorize(promise, action = "executing promise") {
 }
 
 function dynamic_import(url) {
-    return promise_requestorize(import(url), `importing ${url}`);
+    return promise_requestorize(function () {
+        return import(url);
+    }, `importing ${url}`);
 }
 
 function dynamic_default_import(url) {
@@ -293,8 +313,28 @@ function reduce(
     requestor_array,
     throttle
 ) {
-    throttle = throttle || requestor_array.length;
+    // throttle = throttle || requestor_array.length;
+    // let i = 0;
+    // let acc = initial_value;
+    // let requestors = [];
 
+    // while (i * throttle < requestor_array.length) {
+    //     requestors = requestors.concat([
+    //         parseq.parallel(
+    //             requestor_array.slice(i * throttle, (i + 1) * throttle)
+    //         ),
+    //         requestorize(function (array) {
+    //             acc = array.reduce(reducer, acc);
+    //             return acc;
+    //         })
+    //     ]);
+
+    //     i += 1;
+    // };
+    // requestors.push(do_nothing);
+    // return parseq.sequence(requestors);
+
+    throttle = throttle || requestor_array.length;
     return parseq.sequence([
         parseq.parallel(requestor_array.slice(0, throttle)),
         requestorize(function (array) {
