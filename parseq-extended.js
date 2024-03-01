@@ -17,19 +17,23 @@
 
 import parseq from "./parseq.js";
 
+function json_stringify(value) {
+    return JSON.stringify(
+        value,
+        (ignore, v) => (
+            v === undefined
+            ? "undefined"
+            : v
+        )
+    );
+}
+
 function try_catcher(requestor, name = "try-catcher") {
     return function (callback, value) {
         try {
             return requestor(callback, value);
         } catch (e) {
-            const jsonValue = JSON.stringify(
-                value,
-                (ignore, v) => (
-                    v === undefined
-                    ? "undefined"
-                    : v
-                )
-            );
+            const jsonValue = json_stringify(value);
             return callback(
                 undefined,
                 parseq.make_reason(
@@ -53,7 +57,14 @@ function delay(ms, name = "delay") {
                 } catch (error) {
                     return callback(
                         undefined,
-                        parseq.make_reason(name, "", error)
+                        parseq.make_reason(
+                            name,
+                            (
+                                `catched error in ${name} with value `
+                                + `${json_stringify(v)}`
+                            ),
+                            error
+                        )
                     );
                 }
                 return callback(result);
