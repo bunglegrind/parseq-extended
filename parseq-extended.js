@@ -78,7 +78,7 @@ function delay(ms, name = "delay") {
 
 const requestorize = (f, name = "requestorize") => delay(0, name)(f);
 const do_nothing = requestorize((v) => v, "do_nothing");
-const constant = (c) => requestorize(() => c, `constant ${c}`);
+const constant = (c) => requestorize(() => c, `constant ${json_stringify(c)}`);
 
 function if_else(condition, requestor_if, requestor_else, name = "if_else") {
     return function (callback, value) {
