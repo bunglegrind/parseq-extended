@@ -4,16 +4,22 @@
 /*global
     setTimeout, clearTimeout
 */
+/*jslint
+    unordered
+*/
+/*global
+    setTimeout, clearTimeout
+*/
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
     catch, check_callback, constant, create, default, delay, do_nothing,
-    dynamic_default_import, dynamic_import, evidence, factory_maker, fallback,
-    forEach, freeze, if_else, isArray, keys, length, make_reason,
-    make_requestor_factory, map, parallel, parallel_merge, parallel_object,
-    promise_requestorize, race, reason, reduce, requestorize, sequence, slice,
-    stringify, tap, then, try_catcher, value, when, wrap_reason
+    dynamic_default_import, dynamic_import, evidence, factory_maker,
+    factory_merge, fallback, forEach, freeze, if_else, isArray, keys, length,
+    make_reason, make_requestor_factory, map, parallel, parallel_merge,
+    parallel_object, promise_requestorize, race, reason, reduce, requestorize,
+    sequence, slice, stringify, tap, then, try_catcher, value, when,
+    wrap_reason
 */
-
 
 import parseq from "./parseq.js";
 
@@ -90,13 +96,13 @@ function if_else(condition, requestor_if, requestor_else, name = "if_else") {
     };
 }
 
-function when(condition, requestor) {
-    return if_else(condition, requestor, do_nothing, "when");
+function when(condition, requestor, name = "when") {
+    return if_else(condition, requestor, do_nothing, name);
 }
 
-function wrap_reason(requestor) {
+function wrap_reason(requestor, name = "wrap_reason") {
     return function (callback, value) {
-        parseq.check_callback(callback, "wrap_reason");
+        parseq.check_callback(callback, name);
         return requestor(function (value, reason) {
             return callback({value, reason});
         }, value);
@@ -106,28 +112,30 @@ function wrap_reason(requestor) {
 function apply_race(
     requestor_factory,
     time_limit,
-    throttle
+    throttle,
+    name = "apply_race"
 ) {
     return function (callback, value) {
-        parseq.check_callback(callback, "apply_race");
+        parseq.check_callback(callback, name);
         try_catcher(parseq.race(
             value.map(requestor_factory),
             time_limit,
             throttle
-        ), "apply_race")(callback);
+        ), name)(callback);
     };
 }
 
 function apply_fallback(
     requestor_factory,
-    time_limit
+    time_limit,
+    name = "apply_fallback"
 ) {
     return function (callback, value) {
-        parseq.check_callback(callback, "apply_fallback");
+        parseq.check_callback(callback, name);
         try_catcher(parseq.fallback(
             value.map(requestor_factory),
             time_limit
-        ), "apply_fallback")(callback);
+        ), name)(callback);
     };
 }
 
@@ -136,10 +144,11 @@ function apply_parallel(
     optional_requestor_factory,
     time_limit,
     time_option,
-    throttle
+    throttle,
+    name = "apply_parallel"
 ) {
     return function (callback, value) {
-        parseq.check_callback(callback, "apply_parallel");
+        parseq.check_callback(callback, name);
         try_catcher(parseq.parallel(
             value.map(requestor_factory),
             (
@@ -150,7 +159,7 @@ function apply_parallel(
             time_limit,
             time_option,
             throttle
-        ), "apply_parallel")(callback);
+        ), name)(callback);
     };
 }
 
@@ -158,10 +167,11 @@ function apply_parallel_object(
     requestor_factory,
     time_limit,
     time_option,
-    throttle
+    throttle,
+    name = "apply_parallel_object"
 ) {
     return try_catcher(function (callback, value) {
-        parseq.check_callback(callback, "apply_parallel_object");
+        parseq.check_callback(callback, name);
         const keys = Object.keys(value);
         const required_obj_requestor = Object.create(null);
         keys.forEach(function (key) {
@@ -174,12 +184,19 @@ function apply_parallel_object(
             time_option,
             throttle
         )(callback);
-    }, "apply_parallel_object");
+    }, name);
 }
 
-function parallel_merge(obj, opt_obj, time_limit, time_option, throttle) {
+function parallel_merge(
+    obj,
+    opt_obj,
+    time_limit,
+    time_option,
+    throttle,
+    name = "parallel_merge"
+) {
     return function parallel_merge_requestor(callback, value) {
-        parseq.check_callback(callback, "parallel_merge");
+        parseq.check_callback(callback, name);
         return parseq.sequence([
             parseq.parallel_object(
                 obj,
@@ -285,7 +302,7 @@ function factory_maker(requestor, factory_name = "factory") {
                     );
                 }
 //otherwise, default behavior is to provide only the precomputed value
-//in order to have a simple make_requestor_factory unless it's nullish
+//in order to have a simple make_requestor_factory unless it's nil
                 return precomputed ?? value;
             };
         }
@@ -364,6 +381,21 @@ function reduce(
     ]);
 }
 
+function factory_merge(props, factories, name = "factory_merge") {
+    return function (adapters) {
+        const obj = Object.create(null);
+        if (!Array.isArray(props)) {
+            obj[props] = factories(adapters);
+        } else {
+            props.forEach(function (prop, i) {
+                obj[prop] = factories[i](adapters[i]);
+            });
+        }
+
+        return parallel_merge(obj, {}, undefined, 0, undefined, 1, name);
+    };
+}
+
 export default Object.freeze({
 /*jslint-disable*/
     ...parseq,
@@ -388,5 +420,6 @@ export default Object.freeze({
     make_reason: parseq.make_reason,
     try_catcher,
     tap,
-    reduce
+    reduce,
+    factory_merge
 });

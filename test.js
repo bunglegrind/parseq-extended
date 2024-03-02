@@ -779,3 +779,68 @@ test("Reduce with throttle = 3", function (ignore, done) {
         done(assert.equal(value, 75));
     });
 });
+
+test("Merge a factory", function(ignore, done) {
+    const initial = {a: 1};
+    const c = 2;
+    function my_requestor(callback, {a, c}) {
+        const id = setTimeout(function () {
+            return callback(a + 1 + c);
+        }, 0);
+        return function () {
+            clearTimeout(id);
+        };
+    }
+    const my_factory = parseq_extended.factory_maker(my_requestor);
+    parseq_extended.sequence([
+        parseq_extended.factory_merge("b", my_factory)(function ({a}) {
+            return {
+                a,
+                c
+            };
+        })
+    ])(function (value, ignore) {
+        done(assert.deepEqual(
+            value,
+            Object.assign(Object.create(null), {a: 1, b: 4})
+        ));
+    }, initial);
+});
+
+test("Merge factories", function(ignore, done) {
+    const initial = {a: 1};
+    const c = 2;
+    function my_requestor(callback, {a, c}) {
+        const id = setTimeout(function () {
+            return callback(a + 1 + c);
+        }, 0);
+        return function () {
+            clearTimeout(id);
+        };
+    }
+    const my_factory = parseq_extended.factory_maker(my_requestor);
+    parseq_extended.sequence([
+        parseq_extended.factory_merge(
+            ["b", "f"],
+            [my_factory, my_factory]
+        )([
+            function ({a}) {
+                return {
+                    a,
+                    c
+                };
+            },
+            function ({a}) {
+                return {
+                    a,
+                    c
+                };
+            }
+        ])
+    ])(function (value, ignore) {
+        done(assert.deepEqual(
+            value,
+            Object.assign(Object.create(null), {a: 1, b: 4, f: 4})
+        ));
+    }, initial);
+});
