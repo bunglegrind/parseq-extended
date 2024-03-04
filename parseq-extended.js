@@ -444,7 +444,7 @@ function factory_merge(props, factories, name = "factory_merge") {
             });
         }
 
-        return parallel_merge(obj, {}, undefined, 0, undefined, 1, name);
+        return parallel_merge(obj, {}, undefined, 0, 1, name);
     };
 }
 
