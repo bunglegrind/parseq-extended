@@ -319,7 +319,7 @@ test(
                 }
             );
         } catch (e) {
-            assert.equal(e.message, "Not a thunk when executing promise");
+            assert.equal(e.message, "parseq.executing promise: Not a thunk when executing promise");
         }
 
         parseq_extended.promise_requestorize(() => 4)(

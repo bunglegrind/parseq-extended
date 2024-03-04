@@ -6,6 +6,7 @@ Differences between the original parseq library:
 
 1. make\_reason is exposed through the public interface
 1. check\_callback is exposed through the public interface
+1. check\_requestors is exposed through the public interface
 1. start\_requestor\_callback doesn't catch exceptions anymore (see #13)
 
 # More constraints

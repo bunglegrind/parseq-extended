@@ -12,8 +12,8 @@
 */
 /*property
     apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
-    catch, check_callback, constant, create, default, delay, do_nothing,
-    dynamic_default_import, dynamic_import, evidence, factory_maker,
+    catch, check_callback, check_requestors, constant, create, default, delay,
+    do_nothing, dynamic_default_import, dynamic_import, evidence, factory_maker,
     factory_merge, fallback, forEach, freeze, if_else, isArray, keys, length,
     make_reason, make_requestor_factory, map, parallel, parallel_merge,
     parallel_object, promise_requestorize, race, reason, reduce, requestorize,
@@ -52,8 +52,19 @@ function try_catcher(requestor, name = "try-catcher") {
     };
 }
 
+function check_unary(f, name) {
+    if (typeof f !== "function" || f.length > 1) {
+        throw parseq.make_reason(
+            name,
+            "Not a unary function",
+            f
+        );
+    }
+}
+
 function delay(ms, name = "delay") {
     return function (unary) {
+        check_unary(unary, name);
         return function delay_requestor(callback, v) {
             parseq.check_callback(callback, name);
             const id = setTimeout(function (v) {
@@ -87,6 +98,9 @@ const do_nothing = requestorize((v) => v, "do_nothing");
 const constant = (c) => requestorize(() => c, `constant ${json_stringify(c)}`);
 
 function if_else(condition, requestor_if, requestor_else, name = "if_else") {
+    check_unary(condition, name);
+    parseq.check_requestors([requestor_if, requestor_else], name);
+
     return function (callback, value) {
         parseq.check_callback(callback, name);
         if (condition(value)) {
@@ -116,6 +130,13 @@ function apply_race(
     name = "apply_race"
 ) {
     return function (callback, value) {
+        if (!Array.isArray(value)) {
+            return callback(undefined, parseq.make_reason(
+                name,
+                "Value is not an array",
+                value
+            ));
+        }
         parseq.check_callback(callback, name);
         try_catcher(parseq.race(
             value.map(requestor_factory),
@@ -131,6 +152,13 @@ function apply_fallback(
     name = "apply_fallback"
 ) {
     return function (callback, value) {
+        if (!Array.isArray(value)) {
+            return callback(undefined, parseq.make_reason(
+                name,
+                "Value is not an array",
+                value
+            ));
+        }
         parseq.check_callback(callback, name);
         try_catcher(parseq.fallback(
             value.map(requestor_factory),
@@ -148,6 +176,13 @@ function apply_parallel(
     name = "apply_parallel"
 ) {
     return function (callback, value) {
+        if (!Array.isArray(value)) {
+            return callback(undefined, parseq.make_reason(
+                name,
+                "Value is not an array",
+                value
+            ));
+        }
         parseq.check_callback(callback, name);
         try_catcher(parseq.parallel(
             value.map(requestor_factory),
@@ -171,6 +206,13 @@ function apply_parallel_object(
     name = "apply_parallel_object"
 ) {
     return try_catcher(function (callback, value) {
+        if (typeof value !== "object") {
+            return callback(undefined, parseq.make_reason(
+                name,
+                "Value is not an object",
+                value
+            ));
+        }
         parseq.check_callback(callback, name);
         const keys = Object.keys(value);
         const required_obj_requestor = Object.create(null);
@@ -195,6 +237,13 @@ function parallel_merge(
     throttle,
     name = "parallel_merge"
 ) {
+    if (typeof obj !== "object") {
+        throw make_reason(
+            name,
+            "obj is not an object",
+            obj
+        );
+    }
     return function parallel_merge_requestor(callback, value) {
         parseq.check_callback(callback, name);
         return parseq.sequence([
@@ -221,9 +270,11 @@ const is_promise = (p) => typeof p?.then === "function";
 
 function promise_requestorize(promise_thunk, action = "executing promise") {
     if (!is_thunk(promise_thunk)) {
-        const err = new Error(`Not a thunk when ${action}`);
-        err.evidence = promise_thunk;
-        throw err;
+        throw parseq.make_reason(
+            action,
+            `Not a thunk when ${action}`,
+            promise_thunk
+        );
     }
 
     return function (callback) {
@@ -282,6 +333,7 @@ function dynamic_default_import(url) {
 }
 
 function factory_maker(requestor, factory_name = "factory") {
+    parseq.check_requestors([requestor], factory_name);
 //the adapter combines the online value passed to the requestor with the
 // closure/context in which the factory is executed
 // its return value is passed to the requestor
