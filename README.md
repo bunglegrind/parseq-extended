@@ -33,7 +33,7 @@ TODO: description
 - apply\_fallback
 - apply\_parallel
 - apply\_parallel\_object
-- dynamic\_default\_impot
+- dynamic\_default\_import
 - dynamic\_import
 - delay
 - factory\_maker
@@ -47,5 +47,6 @@ TODO: description
 
 1. Parseq original interface signature is a bit clunky. Expecially for the parallel stuff, throttle is the last parameter where it should be the first one. I couldn't find any practical use case for the other parameters, including the optional requestor array/object.  I could change the interface a little bit, by passing an option object, similar to: https://github.com/jlrwi/curried-parseq
 1. Enforce some constraint to the "returned" value (i.e., the value passed to the callback). Well, since most of the time you have this value which is passed through the requestos via parseq.sequence, as application state, probably is worth to enforce the value to be a an object (being the array a special case). And resorting to parallel_object/parallel_merge/factory_merge to provide a consistent interface.
+1. Provide a more coherent (with many more tests!) interface for reason/evidence in order to simplify debug operations where errors occur.
 
 Work in progress...
