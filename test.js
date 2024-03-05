@@ -4,12 +4,12 @@
 /*property
     a, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, b, c, constant, create, deepEqual, delay, do_nothing,
-    dynamic_default_import, dynamic_import, equal, evidence, factory_maker,
-    fallback, isArray, keys, length, listeners, message, myFlag, notEqual, now,
-    ok, on, parallel, parallel_merge, parallel_object, prependListener,
-    promise_requestorize, prop_one, prop_two, prop_zero, race, reason, reduce,
-    removeAllListeners, removeListener, requestorize, sample, sequence, tap,
-    toString, v, value, w, when, wrap_reason
+    dynamic_default_import, dynamic_import, equal, evidence, f, factory_maker,
+    factory_merge, fallback, isArray, keys, length, listeners, message, myFlag,
+    notEqual, now, ok, on, parallel, parallel_merge, parallel_object,
+    prependListener, promise_requestorize, prop_one, prop_two, prop_zero, race,
+    reason, reduce, removeAllListeners, removeListener, requestorize, sample,
+    sequence, tap, toString, v, value, w, when, wrap_reason
 */
 
 import process from "node:process";
@@ -319,7 +319,10 @@ test(
                 }
             );
         } catch (e) {
-            assert.equal(e.message, "parseq.executing promise: Not a thunk when executing promise");
+            assert.equal(
+                e.message,
+                "parseq.executing promise: Not a thunk when executing promise"
+            );
         }
 
         parseq_extended.promise_requestorize(() => 4)(
@@ -780,7 +783,7 @@ test("Reduce with throttle = 3", function (ignore, done) {
     });
 });
 
-test("Merge a factory", function(ignore, done) {
+test("Merge a factory", function (ignore, done) {
     const initial = {a: 1};
     const c = 2;
     function my_requestor(callback, {a, c}) {
@@ -793,7 +796,7 @@ test("Merge a factory", function(ignore, done) {
     }
     const my_factory = parseq_extended.factory_maker(my_requestor);
     parseq_extended.sequence([
-        parseq_extended.factory_merge("b", my_factory)(function ({a}) {
+        parseq_extended.factory_merge({b: my_factory})(function ({a}) {
             return {
                 a,
                 c
@@ -807,7 +810,7 @@ test("Merge a factory", function(ignore, done) {
     }, initial);
 });
 
-test("Merge factories", function(ignore, done) {
+test("Merge factories", function (ignore, done) {
     const initial = {a: 1};
     const c = 2;
     function my_requestor(callback, {a, c}) {
@@ -820,10 +823,10 @@ test("Merge factories", function(ignore, done) {
     }
     const my_factory = parseq_extended.factory_maker(my_requestor);
     parseq_extended.sequence([
-        parseq_extended.factory_merge(
-            ["b", "f"],
-            [my_factory, my_factory]
-        )([
+        parseq_extended.factory_merge({
+            b: my_factory,
+            f: my_factory
+        })([
             function ({a}) {
                 return {
                     a,

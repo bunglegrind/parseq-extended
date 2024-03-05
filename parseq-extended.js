@@ -11,14 +11,14 @@
     setTimeout, clearTimeout
 */
 /*property
-    apply_fallback, apply_parallel, apply_parallel_object, apply_race, assign,
-    catch, check_callback, check_requestors, constant, create, default, delay,
-    do_nothing, dynamic_default_import, dynamic_import, evidence, factory_maker,
-    factory_merge, fallback, forEach, freeze, if_else, isArray, keys, length,
-    make_reason, make_requestor_factory, map, parallel, parallel_merge,
-    parallel_object, promise_requestorize, race, reason, reduce, requestorize,
-    sequence, slice, stringify, tap, then, try_catcher, value, when,
-    wrap_reason
+    adapters, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
+    assign, catch, check_callback, check_requestors, constant, create, default,
+    delay, do_nothing, dynamic_default_import, dynamic_import, evidence,
+    factory_maker, factory_merge, fallback, forEach, freeze, if_else, isArray,
+    keys, length, make_reason, make_requestor_factory, map, obj_factories,
+    parallel, parallel_merge, parallel_object, promise_requestorize, race,
+    reason, reduce, requestorize, sequence, slice, stringify, tap, then,
+    try_catcher, value, when, wrap_reason
 */
 
 import parseq from "./parseq.js";
@@ -433,14 +433,31 @@ function reduce(
     ]);
 }
 
-function factory_merge(props, factories, name = "factory_merge") {
+function factory_merge(obj_factories, name = "factory_merge") {
+    if (typeof obj_factories !== "object") {
+        throw parseq.make_reason(
+            name,
+            "obj_factories is not an object",
+            obj_factories
+        );
+    }
+    const keys = Object.keys(obj_factories);
     return function (adapters) {
         const obj = Object.create(null);
-        if (!Array.isArray(props)) {
-            obj[props] = factories(adapters);
+        if (!Array.isArray(adapters)) {
+            check_unary(adapters);
+            obj[keys[0]] = obj_factories[keys[0]](adapters);
         } else {
-            props.forEach(function (prop, i) {
-                obj[prop] = factories[i](adapters[i]);
+            adapters.forEach(check_unary);
+            if (adapters.length !== keys.length) {
+                throw parseq.make_reason(
+                    name,
+                    "obj_factories and adapters must have same length",
+                    {obj_factories, adapters}
+                );
+            }
+            keys.forEach(function (key, i) {
+                obj[key] = obj_factories[key](adapters[i]);
             });
         }
 
@@ -449,9 +466,12 @@ function factory_merge(props, factories, name = "factory_merge") {
 }
 
 export default Object.freeze({
-/*jslint-disable*/
-    ...parseq,
-/*jslint-enable*/
+    sequence: parseq.sequence,
+    parallel: parseq.parallel,
+    parallel_object: parseq.parallel_object,
+    fallback: parseq.fallback,
+    race: parseq.race,
+    make_reason: parseq.make_reason,
     wrap_reason,
     constant,
     requestorize,
@@ -469,7 +489,6 @@ export default Object.freeze({
     delay,
     factory_maker,
     parallel_merge,
-    make_reason: parseq.make_reason,
     try_catcher,
     tap,
     reduce,
