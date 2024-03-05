@@ -86,6 +86,7 @@ function delay(ms, name = "delay") {
                 }
                 return callback(result);
             }, ms, v);
+
             return function () {
                 clearTimeout(id);
             };
@@ -115,6 +116,8 @@ function when(condition, requestor, name = "when") {
 }
 
 function wrap_reason(requestor, name = "wrap_reason") {
+    parseq.check_requestors([requestor]);
+
     return function (callback, value) {
         parseq.check_callback(callback, name);
         return requestor(function (value, reason) {
@@ -238,7 +241,7 @@ function parallel_merge(
     name = "parallel_merge"
 ) {
     if (typeof obj !== "object") {
-        throw make_reason(
+        throw parseq.make_reason(
             name,
             "obj is not an object",
             obj
@@ -362,13 +365,10 @@ function factory_maker(requestor, factory_name = "factory") {
         if (typeof adapter !== "function") {
             adapter = default_adapter(adapter);
         }
-        return function req(cb, value) {
-            parseq.check_callback(cb, factory_name);
-            return parseq.sequence([
-                requestorize(adapter),
-                requestor
-            ])(cb, value);
-        };
+        return parseq.sequence([
+            requestorize(adapter),
+            requestor
+        ]);
     };
 }
 
