@@ -271,7 +271,11 @@ function parallel_merge(
 const is_thunk = (f) => typeof f === "function" && !f.length;
 const is_promise = (p) => typeof p?.then === "function";
 
-function promise_requestorize(promise_thunk, action = "executing promise") {
+function promise_requestorize(
+    promise_thunk,
+    action = "executing promise",
+    cancel = undefined
+) {
     if (!is_thunk(promise_thunk)) {
         throw parseq.make_reason(
             action,
@@ -319,6 +323,9 @@ function promise_requestorize(promise_thunk, action = "executing promise") {
                 e
             );
         });
+        if (typeof cancel === "function") {
+            return cancel;
+        }
     };
 }
 

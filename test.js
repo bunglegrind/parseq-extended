@@ -339,6 +339,34 @@ test("A promise thunk becomes a requestor", function (ignore, done) {
 });
 
 test(
+    "A promise_requestor can be cancelled if a cancel function is provided",
+    function (ignore, done) {
+        let id;
+        parseq_extended.parallel([
+            parseq_extended.promise_requestorize(
+                function () {
+                    return new Promise(function (resolve) {
+                        id = setTimeout(() => resolve("success"), 10000);
+                    });
+                },
+                "promise",
+                function () {
+                    clearTimeout(id);
+                    done();
+                }
+            ),
+            parseq_extended.promise_requestorize(function () {
+                return new Promise(function (ignore, reject) {
+                    setTimeout(() => reject("failed"), 0);
+                });
+            })
+        ])(function (value, ignore) {
+            assert.ok(value === undefined);
+        });
+    }
+);
+
+test(
     "Not passing a promise thunk to promise_requestorize throws",
     function (ignore, done) {
         try {
