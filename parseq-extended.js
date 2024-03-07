@@ -57,10 +57,10 @@ function check_unary(f, name) {
 }
 
 function delay(ms, name = "delay") {
-    return function (unary) {
-        check_unary(unary, name);
+    return function (unary, factory_name = name) {
+        check_unary(unary, factory_name);
         return function delay_requestor(callback, v) {
-            parseq.check_callback(callback, name);
+            parseq.check_callback(callback, factory_name);
             const id = setTimeout(function (v) {
                 let result;
                 try {
@@ -71,7 +71,7 @@ function delay(ms, name = "delay") {
                         parseq.make_reason(
                             name,
                             (
-                                `catched error in ${name} with value `
+                                `catched error in ${factory_name} with value `
                                 + `${json_stringify(v)}`
                             ),
                             error
@@ -88,7 +88,7 @@ function delay(ms, name = "delay") {
     };
 }
 
-const requestorize = (f, name = "requestorize") => delay(0, name)(f);
+const requestorize = delay(0, "requestorize");
 const do_nothing = requestorize((v) => v, "do_nothing");
 const constant = (c) => requestorize(() => c, `constant ${json_stringify(c)}`);
 
