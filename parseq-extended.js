@@ -4,12 +4,6 @@
 /*global
     setTimeout, clearTimeout
 */
-/*jslint
-    unordered
-*/
-/*global
-    setTimeout, clearTimeout
-*/
 /*property
     adapters, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, catch, check_callback, check_requestors, constant, create, default,
