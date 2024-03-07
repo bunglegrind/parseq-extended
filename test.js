@@ -7,9 +7,9 @@
     dynamic_default_import, dynamic_import, equal, evidence, f, factory_maker,
     factory_merge, fallback, isArray, keys, length, listeners, message, myFlag,
     notEqual, now, ok, on, parallel, parallel_merge, parallel_object,
-    prependListener, promise_requestorize, prop_one, prop_two, prop_zero, race,
-    reason, reduce, removeAllListeners, removeListener, requestorize, sample,
-    sequence, tap, toString, v, value, w, when, wrap_reason
+    prependListener, promise_requestorize, prop_one, prop_two, prop_zero, push,
+    race, reason, reduce, removeAllListeners, removeListener, requestorize,
+    sample, sequence, tap, toString, v, value, w, when, wrap_reason
 */
 
 import process from "node:process";
@@ -173,6 +173,37 @@ test("Map a requestor into an array", function (ignore, done) {
     ])(function (value, reason) {
         assert.ok(value !== undefined, reason);
         done(assert.deepEqual(value, [2, 3, 4], "it should be [2, 3, 4]"));
+    });
+});
+
+test("Failing jobs are supposed to cancel tasks", function (ignore, done) {
+    const called = [];
+    function delay(failTime) {
+        return function (ms) {
+            return function (callback) {
+                const id = setTimeout(function () {
+                    if (ms === failTime) {
+                        return callback(undefined, "Failed.");
+                    }
+                    return callback(true);
+                }, ms);
+
+                return function () {
+                    clearTimeout(id);
+                    called.push(ms);
+                };
+            };
+        };
+    }
+    parseq_extended.sequence([
+        parseq_extended.constant([100, 200, 3000]),
+        parseq_extended.parallel([
+            parseq_extended.apply_parallel(delay(5000)),
+            parseq_extended.apply_parallel(delay(200))
+        ])
+    ])(function (value, ignore) {
+        assert.ok(value === undefined);
+        done(assert.deepEqual(called, [3000, 3000]));
     });
 });
 

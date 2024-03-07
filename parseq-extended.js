@@ -141,7 +141,7 @@ function apply_race(
             ));
         }
         parseq.check_callback(callback, name);
-        try_catcher(parseq.race(
+        return try_catcher(parseq.race(
             value.map(requestor_factory),
             time_limit,
             throttle
@@ -163,7 +163,7 @@ function apply_fallback(
             ));
         }
         parseq.check_callback(callback, name);
-        try_catcher(parseq.fallback(
+        return try_catcher(parseq.fallback(
             value.map(requestor_factory),
             time_limit
         ), name)(callback);
@@ -187,7 +187,7 @@ function apply_parallel(
             ));
         }
         parseq.check_callback(callback, name);
-        try_catcher(parseq.parallel(
+        return try_catcher(parseq.parallel(
             value.map(requestor_factory),
             (
                 typeof optional_requestor_factory === "function"
