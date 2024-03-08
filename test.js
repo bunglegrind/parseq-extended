@@ -101,31 +101,26 @@ test("wrap_reason should encapsulate reasons", function (ignore, done) {
         [parseq_extended.wrap_reason(requestor_fail)]
     )(function (value, reason) {
         assert.ok(value !== undefined, reason);
-        try {
-            assert.equal(Array.isArray(value), true, "value is array");
-            assert.equal(value.length, 1, "value is wun element array");
-            assert.equal(
-                typeof value[0],
-                "object",
-                "value element is an object"
-            );
-            const keys = Object.keys(value[0]);
-            assert.equal(keys.length, 2, "two keys in the return object");
-            assert.deepEqual(
-                keys,
-                ["value", "reason"],
-                "value and reason are the value keys"
-            );
-            assert.deepEqual(
-                value[0],
-                {value: undefined, reason: "failed"},
-                "The returned object should be the wun expected"
-            );
-            done();
-
-        } catch (e) {
-            done(e);
-        }
+        assert.equal(Array.isArray(value), true, "value is array");
+        assert.equal(value.length, 1, "value is wun element array");
+        assert.equal(
+            typeof value[0],
+            "object",
+            "value element is an object"
+        );
+        const keys = Object.keys(value[0]);
+        assert.equal(keys.length, 2, "two keys in the return object");
+        assert.deepEqual(
+            keys,
+            ["value", "reason"],
+            "value and reason are the value keys"
+        );
+        assert.deepEqual(
+            value[0],
+            {value: undefined, reason: "failed"},
+            "The returned object should be the wun expected"
+        );
+        done();
     });
 });
 
@@ -314,18 +309,14 @@ test("Map timeouts to a failing race", function (ignore, done) {
             100
         )
     ])(function (value, reason) {
-        try {
-            assert.equal(value, undefined, "nobody should win");
-            assert.equal(
-                reason.toString(),
-                "Error: parseq.race: Timeout.",
-                "time_limit reached"
-            );
-            assert.equal(reason.evidence, 100, "time_limit");
-            done();
-        } catch (e) {
-            done(e);
-        }
+        assert.equal(value, undefined, "nobody should win");
+        assert.equal(
+            reason.toString(),
+            "Error: parseq.race: Timeout.",
+            "time_limit reached"
+        );
+        assert.equal(reason.evidence, 100, "time_limit");
+        done();
     });
 });
 
@@ -342,6 +333,7 @@ test(
     "A promise_requestor can be cancelled if a cancel function is provided",
     function (ignore, done) {
         let id;
+        let called = false;
         parseq_extended.parallel([
             parseq_extended.promise_requestorize(
                 function () {
@@ -351,8 +343,8 @@ test(
                 },
                 "promise",
                 function () {
+                    called = true;
                     clearTimeout(id);
-                    done();
                 }
             ),
             parseq_extended.promise_requestorize(function () {
@@ -362,6 +354,7 @@ test(
             })
         ])(function (value, ignore) {
             assert.ok(value === undefined);
+            done(assert.ok(called === true));
         });
     }
 );
@@ -411,25 +404,21 @@ test(
             });
         })(
             function (value, reason) {
-                try {
-                    assert.equal(value, undefined, "value should be undefined");
-                    assert.equal(
-                        reason.message,
-                        (
-                            "parseq.promise_requestorize: Failed when "
-                            + "executing promise"
-                        ),
-                        "reason should be failed"
-                    );
-                    assert.equal(
-                        reason.evidence,
-                        "failed",
-                        "reason should be failed"
-                    );
-                    done();
-                } catch (e) {
-                    done(e);
-                }
+                assert.equal(value, undefined, "value should be undefined");
+                assert.equal(
+                    reason.message,
+                    (
+                        "parseq.promise_requestorize: Failed when "
+                        + "executing promise"
+                    ),
+                    "reason should be failed"
+                );
+                assert.equal(
+                    reason.evidence,
+                    "failed",
+                    "reason should be failed"
+                );
+                done();
             }
         );
     }
@@ -440,17 +429,13 @@ test(
     function (ignore, done) {
         parseq_extended.dynamic_default_import("./dynamic_default_import.js")(
             function my_callback(value, reason) {
-                try {
-                    assert.equal(
-                        reason,
-                        undefined,
-                        "reason should be undefined"
-                    );
-                    assert.equal(value?.sample, true, "sample should be true");
-                    done();
-                } catch (e) {
-                    done(e);
-                }
+                assert.equal(
+                    reason,
+                    undefined,
+                    "reason should be undefined"
+                );
+                assert.equal(value?.sample, true, "sample should be true");
+                done();
             }
         );
     }
@@ -459,30 +444,26 @@ test(
 test("dynamic failing default imports are detected", function (ignore, done) {
     parseq_extended.dynamic_default_import("./failing_import.js")(
         function my_callback(value, reason) {
-            try {
-                assert.equal(value, undefined, "value should be undefined");
-                assert.equal(
-                    typeof reason,
-                    "object",
-                    "reason should be an object"
-                );
-                assert.equal(
-                    reason.message,
-                    (
-                        "parseq.promise_requestorize: Failed when importing "
-                        + "./failing_import.js"
-                    ),
-                    "a reason should include a message"
-                );
-                assert.equal(
-                    reason.evidence.message,
-                    "non_existent_function is not defined",
-                    "a reason should include a message"
-                );
-                done();
-            } catch (e) {
-                done(e);
-            }
+            assert.equal(value, undefined, "value should be undefined");
+            assert.equal(
+                typeof reason,
+                "object",
+                "reason should be an object"
+            );
+            assert.equal(
+                reason.message,
+                (
+                    "parseq.promise_requestorize: Failed when importing "
+                    + "./failing_import.js"
+                ),
+                "a reason should include a message"
+            );
+            assert.equal(
+                reason.evidence.message,
+                "non_existent_function is not defined",
+                "a reason should include a message"
+            );
+            done();
         }
     );
 });
@@ -492,17 +473,13 @@ test(
     function (ignore, done) {
         parseq_extended.dynamic_import("./dynamic_import.js")(
             function my_callback(value, reason) {
-                try {
-                    assert.equal(
-                        reason,
-                        undefined,
-                        "reason should be undefined"
-                    );
-                    assert.equal(value?.sample, true, "sample should be true");
-                    done();
-                } catch (e) {
-                    done(e);
-                }
+                assert.equal(
+                    reason,
+                    undefined,
+                    "reason should be undefined"
+                );
+                assert.equal(value?.sample, true, "sample should be true");
+                done();
             }
         );
     }
@@ -518,13 +495,9 @@ test(
 
         delay1s(unary)(function (value, reason) {
             assert.ok(value !== undefined, reason);
-            try {
-                assert.equal(value, 2);
-                assert.ok(Date.now() - start >= 1000);
-                done();
-            } catch (e) {
-                done(e);
-            }
+            assert.equal(value, 2);
+            assert.ok(Date.now() - start >= 1000);
+            done();
         }, 1);
     }
 );
