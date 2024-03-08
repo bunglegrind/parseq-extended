@@ -298,16 +298,21 @@ function promise_requestorize(
                 return callback(value);
             }
 //second callback call: callback has thrown
-            const e = new Error(`Callback failed when ${action}`);
-            e.evidence = reason;
-            throw e;
+            throw parseq.make_reason(
+                action,
+                `Callback failed when ${action}`,
+                reason
+            );
         }
         const promise = promise_thunk();
         if (!is_promise(promise)) {
-            const ee = new Error(`Not a promise when ${action}`);
             return promise_callback(
                 undefined,
-                ee
+                parseq.make_reason(
+                    action,
+                    `Not a promise when ${action}`,
+                    promise
+                )
             );
         }
         promise.then(promise_callback).catch(function (e) {

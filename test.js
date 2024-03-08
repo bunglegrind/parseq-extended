@@ -390,7 +390,10 @@ test(
                 done(
                     assert.equal(
                         reason.evidence.message,
-                        "Not a promise when executing promise"
+                        (
+                            "parseq.executing promise: Not a promise when "
+                            + "executing promise"
+                        )
                     )
                 );
             }
