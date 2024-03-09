@@ -72,7 +72,7 @@ function delay(ms, name = "delay") {
                             name,
                             (
                                 `catched error in ${factory_name} with value `
-                                + `${json_stringify(v)}`
+                                + `${json_stringify(v).slice(200)}`
                             ),
                             error
                         )
