@@ -13,7 +13,7 @@ Differences between the original parseq library:
 
 In order to have a more robust library, I added some more constraints to the original library:
 
-1. requestors must be executed in a different turn. Executing requestors in the same turn of the caller increases the possibility of issues like #13, and the possibility to exhaust the call stack
+1. requestors are executed in a different turn. Executing requestors in the same turn of the caller increases the possibility of issues like #13, and the possibility to exhaust the call stack
 1. All the requestor (config) parameters must be passed through the value arriving from its second argument. It's arbitrary but I need to take a stance, otherwise confusion increases.
 1. Every concrete factory/requestor must have its own name. Since call stacks are destroyed between turns, there's no other way than having a reliable explicit reason (with factory name and evidence) to properly debug the code.
 
@@ -21,14 +21,22 @@ In order to have a more robust library, I added some more constraints to the ori
 # Other useful factories
 
 TODO: description
-- wrap\_reason
-- constant
-- requestorize (a different implementation)
-- make\_requestor\_factory
-- promise\_requestorize
+
+## Requestors
 - do\_nothing
+
+## Requestors transformers
+- wrap\_reason
 - when
 - if\_else
+- try\_catcher
+- tap
+- parallel\_merge
+- reduce
+
+## Requestors factories
+- constant
+- requestorize (a different implementation)
 - apply\_race
 - apply\_fallback
 - apply\_parallel
@@ -36,11 +44,11 @@ TODO: description
 - dynamic\_default\_import
 - dynamic\_import
 - delay
+- promise\_requestorize
+
+## Others
+- make\_requestor\_factory
 - factory\_maker
-- parallel\_merge
-- try\_catcher
-- tap
-- reduce
 - factory\_merge
 
 # Considerations/Open issues
