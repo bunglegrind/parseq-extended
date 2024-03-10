@@ -5,11 +5,12 @@
     a, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, b, c, constant, create, deepEqual, delay, do_nothing,
     dynamic_default_import, dynamic_import, equal, evidence, f, factory_maker,
-    factory_merge, fallback, isArray, keys, length, listeners, message, myFlag,
-    notEqual, now, ok, on, parallel, parallel_merge, parallel_object,
-    prependListener, promise_requestorize, prop_one, prop_two, prop_zero, push,
-    race, reason, reduce, removeAllListeners, removeListener, requestorize,
-    sample, sequence, tap, toString, v, value, w, when, wrap_reason
+    factory_merge, fallback, isArray, keys, length, listeners, make_reason,
+    message, myFlag, notEqual, now, ok, on, only, parallel, parallel_merge,
+    parallel_object, prependListener, promise_requestorize, prop_one, prop_two,
+    prop_zero, push, race, reason, reduce, removeAllListeners, removeListener,
+    requestorize, sample, sequence, signal, tap, toString, v, value, w, when,
+    wrap_reason
 */
 
 import process from "node:process";
@@ -654,7 +655,7 @@ test(
             function (value, reason) {
                 assert.ok(value !== undefined, reason);
                 if (count) {
-                    return done(new Error("callback called twice"));
+                    throw new Error("callback called twice");
                 }
                 count += 1;
                 throw my_error("Booom!");
