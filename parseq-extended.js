@@ -38,7 +38,7 @@ function try_catcher(requestor, name = "try-catcher") {
                 undefined,
                 parseq.make_reason(
                     name,
-                    `catched requestor error ${jsonValue}`,
+                    `catched requestor error ${jsonValue.slice(0, 200)}`,
                     e
                 )
             );
@@ -72,7 +72,7 @@ function delay(ms, name = "delay") {
                             name,
                             (
                                 `catched error in ${factory_name} with value `
-                                + `${json_stringify(v).slice(200)}`
+                                + `${json_stringify(v).slice(0, 200)}`
                             ),
                             error
                         )
