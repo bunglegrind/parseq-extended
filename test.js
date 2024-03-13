@@ -8,9 +8,9 @@
     factory_merge, fallback, isArray, keys, length, listeners, make_reason,
     message, myFlag, notEqual, now, ok, on, only, parallel, parallel_merge,
     parallel_object, prependListener, promise_requestorize, prop_one, prop_two,
-    prop_zero, push, race, reason, reduce, removeAllListeners, removeListener,
-    requestorize, sample, sequence, signal, tap, toString, v, value, w, when,
-    wrap_reason
+    prop_zero, push, q, race, reason, reduce, removeAllListeners,
+    removeListener, requestorize, sample, sequence, signal, tap, toString, v,
+    value, w, when, wrap_reason, z
 */
 
 import process from "node:process";
@@ -832,12 +832,12 @@ test("Merge a factory", function (ignore, done) {
     }
     const my_factory = parseq_extended.factory_maker(my_requestor);
     parseq_extended.sequence([
-        parseq_extended.factory_merge({b: my_factory})(function ({a}) {
+        parseq_extended.parallel_merge({b: my_factory(function ({a}) {
             return {
                 a,
                 c
             };
-        })
+        })})
     ])(function (value, ignore) {
         done(assert.deepEqual(
             value,
@@ -859,23 +859,22 @@ test("Merge factories", function (ignore, done) {
     }
     const my_factory = parseq_extended.factory_maker(my_requestor);
     parseq_extended.sequence([
-        parseq_extended.factory_merge({
-            b: my_factory,
-            f: my_factory
-        })([
-            function ({a}) {
+        parseq_extended.parallel_merge({
+            b: my_factory(function ({a}) {
                 return {
                     a,
-                    c
+                    c,
+                    q: 3
                 };
-            },
-            function ({a}) {
+            }),
+            f: my_factory(function ({a}) {
                 return {
                     a,
-                    c
+                    c,
+                    z: 55
                 };
-            }
-        ])
+            })
+        })
     ])(function (value, ignore) {
         done(assert.deepEqual(
             value,

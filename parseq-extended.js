@@ -8,11 +8,11 @@
     adapters, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, catch, check_callback, check_requestors, constant, create, default,
     delay, do_nothing, dynamic_default_import, dynamic_import, evidence,
-    factory_maker, factory_merge, fallback, forEach, freeze, if_else, isArray,
-    keys, length, make_reason, make_requestor_factory, map, obj_factories,
-    parallel, parallel_merge, parallel_object, promise_requestorize, race,
-    reason, reduce, requestorize, sequence, slice, stringify, tap, then,
-    try_catcher, value, when, wrap_reason
+    factory_maker, fallback, forEach, freeze, if_else, isArray, keys, length,
+    make_reason, make_requestor_factory, map, obj_factories, parallel,
+    parallel_merge, parallel_object, promise_requestorize, race, reason, reduce,
+    requestorize, sequence, slice, stringify, tap, then, try_catcher, value,
+    when, wrap_reason
 */
 
 import parseq from "./parseq.js";
@@ -33,12 +33,14 @@ function try_catcher(requestor, name = "try-catcher") {
         try {
             return requestor(callback, value);
         } catch (e) {
-            const jsonValue = json_stringify(value);
             return callback(
                 undefined,
                 parseq.make_reason(
                     name,
-                    `catched requestor error ${jsonValue.slice(0, 200)}`,
+                    (
+                        `catched requestor error `
+                        + `${json_stringify(value).slice(0, 200)}`
+                    ),
                     e
                 )
             );
@@ -439,38 +441,6 @@ function reduce(
     ]);
 }
 
-function factory_merge(obj_factories, name = "factory_merge") {
-    if (typeof obj_factories !== "object") {
-        throw parseq.make_reason(
-            name,
-            "obj_factories is not an object",
-            obj_factories
-        );
-    }
-    const keys = Object.keys(obj_factories);
-    return function (adapters) {
-        const obj = Object.create(null);
-        if (!Array.isArray(adapters)) {
-            check_unary(adapters);
-            obj[keys[0]] = obj_factories[keys[0]](adapters);
-        } else {
-            adapters.forEach(check_unary);
-            if (adapters.length !== keys.length) {
-                throw parseq.make_reason(
-                    name,
-                    "obj_factories and adapters must have same length",
-                    {obj_factories, adapters}
-                );
-            }
-            keys.forEach(function (key, i) {
-                obj[key] = obj_factories[key](adapters[i]);
-            });
-        }
-
-        return parallel_merge(obj, {}, undefined, 0, 1, name);
-    };
-}
-
 export default Object.freeze({
     sequence: parseq.sequence,
     parallel: parseq.parallel,
@@ -497,6 +467,5 @@ export default Object.freeze({
     parallel_merge,
     try_catcher,
     tap,
-    reduce,
-    factory_merge
+    reduce
 });

@@ -25,7 +25,7 @@ TODO: description
 ## Requestors
 - do\_nothing
 
-## Requestors transformers
+## Requestors decorators
 - wrap\_reason
 - when
 - if\_else
@@ -49,7 +49,6 @@ TODO: description
 ## Others
 - make\_requestor\_factory
 - factory\_maker
-- factory\_merge
 
 # Considerations/Open issues
 
