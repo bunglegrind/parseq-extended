@@ -289,7 +289,9 @@ function promise_requestorize(
                 if (value === undefined) {
                     return callback(
                         undefined,
-//first callback call: promise has thrown
+
+// first callback call: promise has thrown
+
                         parseq.make_reason(
                             "promise_requestorize",
                             `Failed when ${action}`,
@@ -299,7 +301,9 @@ function promise_requestorize(
                 }
                 return callback(value);
             }
-//second callback call: callback has thrown
+
+// second callback call: callback has thrown
+
             throw parseq.make_reason(
                 action,
                 `Callback failed when ${action}`,
@@ -318,7 +322,9 @@ function promise_requestorize(
             );
         }
         promise.then(promise_callback).catch(function (e) {
-//at this point we still don't know if the promise or the callback has thrown
+
+// at this point we still don't know if the promise or the callback has thrown
+
             promise_callback(
                 undefined,
                 e
@@ -345,15 +351,20 @@ function dynamic_default_import(url) {
 
 function factory_maker(requestor, factory_name = "factory") {
     parseq.check_requestors([requestor], factory_name);
-//the adapter combines the online value passed to the requestor with the
+
+// the adapter combines the online value passed to the requestor with the
 // closure/context in which the factory is executed
 // its return value is passed to the requestor
+
     return function factory(adapter) {
 
-//a default adapter is provided in order to manage the most common cases
+// a default adapter is provided in order to manage the most common cases
+
         function default_adapter(precomputed) {
             return function (value) {
-//default: both values are object, so we give the requestor their merge
+
+// default: both values are object, so we give the requestor their merge
+
                 if (
                     typeof precomputed === "object"
                     && !Array.isArray(precomputed)
@@ -364,8 +375,10 @@ function factory_maker(requestor, factory_name = "factory") {
                         value
                     );
                 }
-//otherwise, default behavior is to provide only the precomputed value
-//in order to have a simple make_requestor_factory unless it's nil
+
+// otherwise, default behavior is to provide only the precomputed value
+// in order to have a simple make_requestor_factory unless it's nil
+
                 return precomputed ?? value;
             };
         }
