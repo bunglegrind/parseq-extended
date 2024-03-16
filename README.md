@@ -28,34 +28,38 @@ The functions available in this module are divided in three categories.
 
 The terminology herein utilized moves away from the original parseq library, since what parseq calls _requestor factories_ I called _requestor decorators_, i.e., a function which, given one or more requestors at its input, returns a new requestor. I used the term _requestor factories_ to identify functions which given some parameters, even other factories, return a requestor.
 The _others_ category denotes functions which, given some parameters, return a requestor factory.
+
 ## Requestors
-- `do_nothing`
+
+- `do_nothing`: The parseq equivalent of the identity function.
 
 ## Requestors decorators
-- `wrap_reason`
-- `when`
-- `if_else`
-- `try_catcher`
-- `tap`
-- `parallel_merge`
-- `reduce`
+
+- `wrap_reason`: Use it to wrap a requestor response inside a `{value, reason}` object in order to collect failures without blocking the execution.
+- `when`: Executes a requestor only when the condition is true. The condition function takes the requestor input value as its input.
+- `if_else`: Same with `when`, but it takes also a requestor for failing conditions.
+- `try_catcher`: Helper decorator that converts requestor exceptions into suitable format for parseq.
+- `tap`: Just like Ramda's tap, executes the requestor and returns the same input value, discarding requestor output.
+- `parallel_merge`: Shortcut to `parallel_object`, it enriches the input value with the results of the requestor object output.
+- `reduce`: Works similarly to `Array.prototype.reduce`.
 
 ## Requestors factories
-- `constant`
-- `requestorize`
-- `apply_race`
-- `apply_fallback`
-- `apply_parallel`
-- `apply_parallel_object`
-- `dynamic_default_import`
-- `dynamic_import`
-- `delay`
-- `promise_requestorize`
+
+- `constant`: Given a value, returns a requestor which passes the value as output.
+- `requestorize`: A different implementation of the original one in parseq. This one relies on setTimeout in order to execute the unary function in a different turn.
+- `apply_race`: Like `race`, but the requestor array is built dynamically using an array of values as input of a factory
+- `apply_fallback`: Like `fallback`, but the requestor array is built dynamically using an array of values as input of a factory
+- `apply_parallel`: Like `parallel`, but the requestor array is built dynamically using an array of values as input of a factory
+- `apply_parallel_object`: Like `parallel\_object`, but the requestor array is built dynamically using an array of values as input of a factory
+- `promise_requestorize`: Accepts a promise thunk as input and returns a requestor which executes the promise
+- `dynamic_default_import`: Takes an ES6 url as input and returns a requestor which returns the default module
+- `dynamic_import`: Takes an ES6 url as input and returns a requestor which returns the module
+- `delay`: Given a unary function returns a requestor which is executed at a fixed delay
 
 ## Others
-- `make_requestor_factory`  
-It's just a shortcut for the composition of requestorize and factory\_maker
-- `factory_maker`
+
+- `make_requestor_factory`: It's just a shortcut for the composition of requestorize and factory\_maker
+- `factory_maker`: Given a requestor, returns the factory of the requestor which accept a suitable object/function as input
 
 # Considerations/Open issues
 
