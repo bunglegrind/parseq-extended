@@ -80,6 +80,16 @@ function delay(ms, name = "delay") {
                         )
                     );
                 }
+                if (result === undefined) {
+                    return callback(
+                        undefined,
+                        parseq.make_reason(
+                            name,
+                            "unary function returned undefined",
+                            v
+                        )
+                    );
+                }
                 return callback(result);
             }, ms, v);
 

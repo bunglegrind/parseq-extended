@@ -155,7 +155,23 @@ test(
     }
 );
 
-test("Map a requestor into an array", function (ignore, done) {
+test(
+    "Unary functions are not allowed to return undefined in requestorize",
+    function (ignore, done) {
+        parseq_extended.sequence([
+            parseq_extended.constant(5),
+            parseq_extended.requestorize(() => undefined)
+        ])(function (value, reason) {
+            assert.ok(value === undefined);
+            done(assert.equal(
+                reason.message,
+                "parseq.requestorize: unary function returned undefined"
+            ));
+        });
+    }
+);
+
+test("Map a requestor an array", function (ignore, done) {
     parseq_extended.sequence([
         parseq_extended.constant([1, 2, 3]),
         parseq_extended.when(
