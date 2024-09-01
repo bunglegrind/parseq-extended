@@ -7,8 +7,8 @@
     dynamic_default_import, dynamic_import, equal, evidence, f, factory_maker,
     factory_merge, fallback, isArray, keys, length, listeners, make_reason,
     message, myFlag, notEqual, now, ok, on, only, parallel, parallel_merge,
-    parallel_object, prependListener, promise_requestorize, prop_one, prop_two,
-    prop_zero, push, q, race, reason, reduce, removeAllListeners,
+    parallel_object, persist, prependListener, promise_requestorize, prop_one,
+    prop_two, prop_zero, push, q, race, reason, reduce, removeAllListeners,
     removeListener, requestorize, sample, sequence, signal, tap, toString, v,
     value, w, when, wrap_reason, z
 */
@@ -486,7 +486,7 @@ test("dynamic failing default imports are detected", function (ignore, done) {
 });
 
 test(
-    "dynamic nondefault imports are imported as requestors",
+    "dynamic non-default imports are imported as requestors",
     function (ignore, done) {
         parseq_extended.dynamic_import("./dynamic_import.js")(
             function my_callback(value, reason) {
@@ -659,7 +659,7 @@ test(
 test(
     "Final callback exceptions must crash the program",
     function (ignore, done) {
-        hasThrown("uncaughtException", "Booom!", done);
+        hasThrown("uncaughtException", "Boom!", done);
 
         let count = 0;
 
@@ -674,7 +674,7 @@ test(
                     throw new Error("callback called twice");
                 }
                 count += 1;
-                throw my_error("Booom!");
+                throw my_error("Boom!");
             }
         );
     }
@@ -721,11 +721,11 @@ test("try-catcher catches requestor errors", function (ignore, done) {
         assert.deepEqual(
             reason.evidence.message,
             "Cannot convert undefined or null to object",
-            "error is catched"
+            "error is caught"
         );
         done(assert.deepEqual(
             reason.message,
-            "parseq.apply_parallel_object: catched requestor error null",
+            "parseq.apply_parallel_object: caught requestor error null",
             "it should signal a catch"
         ));
     });
@@ -898,3 +898,72 @@ test("Merge factories", function (ignore, done) {
         ));
     }, initial);
 });
+
+test("Retry 3 times", function (ignore, done) {
+    let tentatives = 0;
+    const my_requestor = parseq_extended.requestorize(function () {
+        tentatives += 1;
+        if (tentatives < 4) {
+            throw "Boom!";
+        }
+        return true;
+    });
+
+    parseq_extended.persist(my_requestor, 4)(function (value, ignore) {
+        assert.equal(tentatives, 4);
+        done(assert.ok(value));
+    });
+});
+
+test(
+    "Retry 3 times wih 1 seconds delay should complete after 3 seconds",
+    function (ignore, done) {
+        let tentatives = 0;
+        const my_requestor = parseq_extended.requestorize(function () {
+            tentatives += 1;
+            if (tentatives < 4) {
+                throw "Boom!";
+            }
+            return true;
+        });
+
+        const test_subject = parseq_extended.persist(my_requestor, 4, 1000);
+
+        const delay = parseq_extended.delay(1000 * (3 - 0.005));
+
+        parseq_extended.race([
+            delay(() => "delay"),
+            test_subject
+        ])(function (value, ignore) {
+            assert.equal(tentatives, 3);
+            done(assert.equal("delay", value));
+        });
+    }
+);
+
+test(
+    "Retry 3 times wih 1 seconds delay should complete before 4 seconds",
+    function (ignore, done) {
+        let tentatives = 0;
+        const my_requestor = parseq_extended.requestorize(function () {
+            tentatives += 1;
+            if (tentatives < 4) {
+                throw "Boom!";
+            }
+            return true;
+        });
+
+        const test_subject = parseq_extended.persist(my_requestor, 4, 1000);
+
+        const delay = parseq_extended.delay(1000 * (4 + 0.005));
+
+        parseq_extended.race([
+            delay(() => "delay"),
+            test_subject
+        ])(function (value, ignore) {
+            assert.equal(tentatives, 4);
+            assert.ok(value);
+            done(assert.notEqual("delay", value));
+        });
+    }
+);

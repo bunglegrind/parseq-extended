@@ -8,11 +8,11 @@
     adapters, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, catch, check_callback, check_requestors, constant, create, default,
     delay, do_nothing, dynamic_default_import, dynamic_import, evidence,
-    factory_maker, fallback, forEach, freeze, if_else, isArray, keys, length,
-    make_reason, make_requestor_factory, map, obj_factories, parallel,
-    parallel_merge, parallel_object, promise_requestorize, race, reason, reduce,
-    requestorize, sequence, slice, stringify, tap, then, try_catcher, value,
-    when, wrap_reason
+    factory_maker, fallback, fill, forEach, freeze, if_else, isArray, keys,
+    length, make_reason, make_requestor_factory, map, obj_factories, parallel,
+    parallel_merge, parallel_object, persist, promise_requestorize, race,
+    reason, reduce, requestorize, sequence, slice, stringify, tap, then,
+    try_catcher, value, when, wrap_reason
 */
 
 import parseq from "./parseq.js";
@@ -38,7 +38,7 @@ function try_catcher(requestor, name = "try-catcher") {
                 parseq.make_reason(
                     name,
                     (
-                        `catched requestor error `
+                        `caught requestor error `
                         + `${json_stringify(value).slice(0, 200)}`
                     ),
                     e
@@ -73,7 +73,7 @@ function delay(ms, name = "delay") {
                         parseq.make_reason(
                             name,
                             (
-                                `catched error in ${factory_name} with value `
+                                `caught error in ${factory_name} with value `
                                 + `${json_stringify(v).slice(0, 200)}`
                             ),
                             error
@@ -464,6 +464,23 @@ function reduce(
     ]);
 }
 
+function persist(requestor, tentatives, time_delay, time_limit) {
+    function delay_requestor(cb, v) {
+        const id = setTimeout(requestor, time_delay, cb, v);
+
+        return function () {
+            clearTimeout(id);
+        };
+    }
+    return parseq.fallback(
+        [
+            requestor,
+            ...(new Array(tentatives - 1)).fill(delay_requestor)
+        ],
+        time_limit
+    );
+}
+
 export default Object.freeze({
     sequence: parseq.sequence,
     parallel: parseq.parallel,
@@ -490,5 +507,6 @@ export default Object.freeze({
     parallel_merge,
     try_catcher,
     tap,
-    reduce
+    reduce,
+    persist
 });

@@ -55,6 +55,7 @@ The _others_ category denotes functions which, given some parameters, return a r
 - `dynamic_default_import`: Takes an ES6 url as input and returns a requestor which returns the default module
 - `dynamic_import`: Takes an ES6 url as input and returns a requestor which returns the module
 - `delay`: Given a unary function returns a requestor which is executed at a fixed delay
+- `persist`: Given a requestor, returns a new requestor which persists for n tentatives to successfully execute the requestor, possibly delayed by a time_delay
 
 ## Others
 
