@@ -58,49 +58,56 @@ function check_unary(f, name) {
     }
 }
 
-function delay(ms, name = "delay") {
-    return function (unary, factory_name = name) {
-        check_unary(unary, factory_name);
-        return function delay_requestor(callback, v) {
-            parseq.check_callback(callback, factory_name);
-            const id = setTimeout(function (v) {
-                let result;
-                try {
-                    result = unary(v);
-                } catch (error) {
-                    return callback(
-                        undefined,
-                        parseq.make_reason(
-                            name,
-                            (
-                                `caught error in ${factory_name} with value `
-                                + `${json_stringify(v).slice(0, 200)}`
-                            ),
-                            error
-                        )
-                    );
-                }
-                if (result === undefined) {
-                    return callback(
-                        undefined,
-                        parseq.make_reason(
-                            name,
-                            "unary function returned undefined",
-                            v
-                        )
-                    );
-                }
-                return callback(result);
-            }, ms, v);
+function requestorize(unary, factory_name = "requestorize") {
+    check_unary(unary, factory_name);
+    return function delay_requestor(callback, v) {
+        parseq.check_callback(callback, factory_name);
+        const id = setTimeout(function (v) {
+            let result;
+            try {
+                result = unary(v);
+            } catch (error) {
+                return callback(
+                    undefined,
+                    parseq.make_reason(
+                        factory_name,
+                        (
+                            `caught error in ${factory_name} with value `
+                            + `${json_stringify(v).slice(0, 200)}`
+                        ),
+                        error
+                    )
+                );
+            }
+            if (result === undefined) {
+                return callback(
+                    undefined,
+                    parseq.make_reason(
+                        factory_name,
+                        "unary function returned undefined",
+                        v
+                    )
+                );
+            }
+            return callback(result);
+        }, 0, v);
 
-            return function () {
-                clearTimeout(id);
-            };
+        return function () {
+            clearTimeout(id);
         };
     };
 }
 
-const requestorize = delay(0, "requestorize");
+function delay(requestor, ms, name = "delay") {
+    return try_catcher(function (cb, v) {
+        const id = setTimeout(requestor, ms, cb, v);
+
+        return function () {
+            clearTimeout(id);
+        };
+    }, name);
+}
+
 const do_nothing = requestorize((v) => v, "do_nothing");
 const constant = (c) => requestorize(() => c, `constant ${json_stringify(c)}`);
 
@@ -464,14 +471,13 @@ function reduce(
     ]);
 }
 
-function persist(requestor, tentatives, time_delay, time_limit) {
-    function delay_requestor(cb, v) {
-        const id = setTimeout(requestor, time_delay, cb, v);
-
-        return function () {
-            clearTimeout(id);
-        };
-    }
+function persist(
+    requestor,
+    tentatives,
+    time_delay = 0,
+    time_limit = undefined
+) {
+    const delay_requestor = delay(requestor, time_delay);
     return parseq.fallback(
         [
             requestor,

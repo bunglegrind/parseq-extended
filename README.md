@@ -42,6 +42,8 @@ The _others_ category denotes functions which, given some parameters, return a r
 - `tap`: Just like Ramda's tap, executes the requestor and returns the same input value, discarding requestor output.
 - `parallel_merge`: Shortcut to `parallel_object`, it enriches the input value with the results of the requestor object output.
 - `reduce`: Works similarly to `Array.prototype.reduce`.
+- `delay`: Given a requestor returns a new requestor which is executed at a fixed delay
+- `persist`: Given a requestor, returns a new requestor which persists for n tentatives to successfully execute the requestor, possibly delayed by a time_delay
 
 ## Requestors factories
 
@@ -54,8 +56,6 @@ The _others_ category denotes functions which, given some parameters, return a r
 - `promise_requestorize`: Accepts a promise thunk as input and returns a requestor which executes the promise
 - `dynamic_default_import`: Takes an ES6 url as input and returns a requestor which returns the default module
 - `dynamic_import`: Takes an ES6 url as input and returns a requestor which returns the module
-- `delay`: Given a unary function returns a requestor which is executed at a fixed delay
-- `persist`: Given a requestor, returns a new requestor which persists for n tentatives to successfully execute the requestor, possibly delayed by a time_delay
 
 ## Others
 

@@ -505,7 +505,10 @@ test(
 test(
     "delay requestor should execute unary function at least after x ms",
     function (ignore, done) {
-        const delay1s = parseq_extended.delay(1000);
+        const delay1s = (unary) => parseq_extended.delay(
+            parseq_extended.requestorize(unary),
+            1000
+        );
         const unary = (v) => v + 1;
 
         const start = Date.now();
@@ -737,10 +740,13 @@ test(
         parseq_extended.sequence([
             parseq_extended.constant(5),
             parseq_extended.tap(
-                parseq_extended.delay(100)(function (value) {
-                    assert.equal(value, 5);
-                    return value + 1;
-                })
+                parseq_extended.delay(
+                    parseq_extended.requestorize(function (value) {
+                        assert.equal(value, 5);
+                        return value + 1;
+                    }),
+                    100
+                )
             )
         ])(function (value, reason) {
             assert.ok(value !== undefined, reason);
@@ -755,9 +761,12 @@ test(
         parseq_extended.sequence([
             parseq_extended.constant(5),
             parseq_extended.tap(
-                parseq_extended.delay(100)(function () {
-                    throw "Boom!";
-                })
+                parseq_extended.delay(
+                    parseq_extended.requestorize(function () {
+                        throw "Boom!";
+                    }),
+                    100
+                )
             ),
             parseq_extended.do_nothing
         ])(function (value, reason) {
@@ -929,10 +938,12 @@ test(
 
         const test_subject = parseq_extended.persist(my_requestor, 4, 1000);
 
-        const delay = parseq_extended.delay(1000 * (3 - 0.005));
 
         parseq_extended.race([
-            delay(() => "delay"),
+            parseq_extended.delay(
+                parseq_extended.requestorize(() => "delay"),
+                1000 * (3 - 0.005)
+            ),
             test_subject
         ])(function (value, ignore) {
             assert.equal(tentatives, 3);
@@ -955,10 +966,11 @@ test(
 
         const test_subject = parseq_extended.persist(my_requestor, 4, 1000);
 
-        const delay = parseq_extended.delay(1000 * (4 + 0.005));
-
         parseq_extended.race([
-            delay(() => "delay"),
+            parseq_extended.delay(
+                parseq_extended.requestorize(() => "delay"),
+                1000 * (4 - 0.005)
+            ),
             test_subject
         ])(function (value, ignore) {
             assert.equal(tentatives, 4);
