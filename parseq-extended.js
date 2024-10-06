@@ -494,6 +494,7 @@ export default Object.freeze({
     fallback: parseq.fallback,
     race: parseq.race,
     make_reason: parseq.make_reason,
+    check_callback: parseq.check_callback,
     wrap_reason,
     constant,
     requestorize,

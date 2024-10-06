@@ -95,6 +95,11 @@ test("parseq-extended should include parseq", function () {
         parseq.race,
         "race should be in parseq extended"
     );
+    assert.equal(
+        parseq_extended.check_callback,
+        parseq.check_callback,
+        "check_callback should be in parseq extended"
+    );
 });
 
 test("wrap_reason should encapsulate reasons", function (ignore, done) {
