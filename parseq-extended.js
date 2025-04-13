@@ -9,10 +9,11 @@
     assign, catch, check_callback, check_requestors, constant, create, default,
     delay, do_nothing, dynamic_default_import, dynamic_import, evidence,
     factory_maker, fallback, fill, forEach, freeze, if_else, isArray, keys,
-    length, make_reason, make_requestor_factory, map, obj_factories, parallel,
+    length, make_reason, make_requestor_factory, map, name, obj_factories,
+    optional_array, optional_object, optional_requestor_factory, parallel,
     parallel_merge, parallel_object, persist, promise_requestorize, race,
     reason, reduce, requestorize, sequence, slice, stringify, tap, then,
-    try_catcher, value, when, wrap_reason
+    throttle, time_limit, time_option, try_catcher, value, when, wrap_reason
 */
 
 import parseq from "./parseq.js";
@@ -141,10 +142,9 @@ function wrap_reason(requestor, name = "wrap_reason") {
 
 function apply_race(
     requestor_factory,
-    time_limit,
-    throttle,
-    name = "apply_race"
+    options = {name: "apply_race"}
 ) {
+    const {time_limit, throttle, name} = options;
     return function (callback, value) {
         if (!Array.isArray(value)) {
             return callback(undefined, parseq.make_reason(
@@ -164,9 +164,9 @@ function apply_race(
 
 function apply_fallback(
     requestor_factory,
-    time_limit,
-    name = "apply_fallback"
+    options = {name: "apply_fallback"}
 ) {
+    const {time_limit, name} = options;
     return function (callback, value) {
         if (!Array.isArray(value)) {
             return callback(undefined, parseq.make_reason(
@@ -185,12 +185,15 @@ function apply_fallback(
 
 function apply_parallel(
     requestor_factory,
-    optional_requestor_factory,
-    time_limit,
-    time_option,
-    throttle,
-    name = "apply_parallel"
+    options = {name: "apply_parallel"}
 ) {
+    const {
+        optional_requestor_factory,
+        time_limit,
+        time_option,
+        throttle,
+        name
+    } = options;
     return function (callback, value) {
         if (!Array.isArray(value)) {
             return callback(undefined, parseq.make_reason(
@@ -216,11 +219,14 @@ function apply_parallel(
 
 function apply_parallel_object(
     requestor_factory,
-    time_limit,
-    time_option,
-    throttle,
-    name = "apply_parallel_object"
+    options = {name: "apply_parallel_object"}
 ) {
+    const {
+        time_limit,
+        time_option,
+        throttle,
+        name
+    } = options;
     return try_catcher(function (callback, value) {
         if (typeof value !== "object") {
             return callback(undefined, parseq.make_reason(
@@ -247,12 +253,15 @@ function apply_parallel_object(
 
 function parallel_merge(
     obj,
-    opt_obj,
-    time_limit,
-    time_option,
-    throttle,
-    name = "parallel_merge"
+    options = {name: "parallel_merge"}
 ) {
+    const {
+        optional_object,
+        time_limit,
+        time_option,
+        throttle,
+        name
+    } = options;
     if (typeof obj !== "object") {
         throw parseq.make_reason(
             name,
@@ -265,7 +274,7 @@ function parallel_merge(
         return parseq.sequence([
             parseq.parallel_object(
                 obj,
-                opt_obj,
+                optional_object,
                 time_limit,
                 time_option,
                 throttle
@@ -487,12 +496,57 @@ function persist(
     );
 }
 
+function sequence(requestor_array, options = {}) {
+    return parseq.sequence(requestor_array, options?.time_limit);
+}
+
+function parallel(
+    required_array,
+    options = {}
+) {
+    return parseq.parallel(
+        required_array,
+        options?.optional_array,
+        options?.time_limit,
+        options?.time_option,
+        options?.throttle
+    );
+}
+
+function parallel_object(
+    required_object,
+    options = {}
+) {
+    return parseq.parallel_object(
+        required_object,
+        options?.optional_object,
+        options?.time_limit,
+        options?.time_option,
+        options?.throttle
+    );
+}
+
+function fallback(requestor_array, options = {}) {
+    return parseq.fallback(
+        requestor_array,
+        options?.time_limit
+    );
+}
+
+function race(requestor_array, options = {}) {
+    return parseq.race(
+        requestor_array,
+        options?.time_limit,
+        options?.throttle
+    );
+}
+
 export default Object.freeze({
-    sequence: parseq.sequence,
-    parallel: parseq.parallel,
-    parallel_object: parseq.parallel_object,
-    fallback: parseq.fallback,
-    race: parseq.race,
+    sequence,
+    parallel,
+    parallel_object,
+    fallback,
+    race,
     make_reason: parseq.make_reason,
     check_callback: parseq.check_callback,
     wrap_reason,

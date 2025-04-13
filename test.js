@@ -69,39 +69,6 @@ function hasThrown(event, message, done) {
     process.prependListener(event, listener);
 }
 
-test("parseq-extended should include parseq", function () {
-    assert.equal(
-        parseq_extended.sequence,
-        parseq.sequence,
-        "sequence should be in parseq extended"
-    );
-    assert.equal(
-        parseq_extended.parallel,
-        parseq.parallel,
-        "parallel should be in parseq extended"
-    );
-    assert.equal(
-        parseq_extended.fallback,
-        parseq.fallback,
-        "fallback should be in parseq extended"
-    );
-    assert.equal(
-        parseq_extended.parallel_object,
-        parseq.parallel_object,
-        "parallel_object should be in parseq extended"
-    );
-    assert.equal(
-        parseq_extended.race,
-        parseq.race,
-        "race should be in parseq extended"
-    );
-    assert.equal(
-        parseq_extended.check_callback,
-        parseq.check_callback,
-        "check_callback should be in parseq extended"
-    );
-});
-
 test("wrap_reason should encapsulate reasons", function (ignore, done) {
     parseq_extended.parallel(
         [parseq_extended.wrap_reason(requestor_fail)]
@@ -328,7 +295,7 @@ test("Map timeouts to a failing race", function (ignore, done) {
                     };
                 };
             },
-            100
+            {time_limit: 100}
         )
     ])(function (value, reason) {
         assert.equal(value, undefined, "nobody should win");
