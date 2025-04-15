@@ -9,15 +9,14 @@
     message, myFlag, notEqual, now, ok, on, only, parallel, parallel_merge,
     parallel_object, persist, prependListener, promise_requestorize, prop_one,
     prop_two, prop_zero, push, q, race, reason, reduce, removeAllListeners,
-    removeListener, requestorize, sample, sequence, signal, tap, toString, v,
-    value, w, when, wrap_reason, z
+    removeListener, requestorize, sample, sequence, signal, tap, time_limit,
+    toString, v, value, w, when, wrap_reason, z
 */
 
 import process from "node:process";
 import {before, test} from "node:test";
 import assert from "node:assert/strict";
 import parseq_extended from "./parseq-extended.js";
-import parseq from "./parseq.js";
 
 function requestor_fail(callback) {
     setTimeout(callback, 0, undefined, "failed");
@@ -948,6 +947,30 @@ test(
             assert.equal(tentatives, 4);
             assert.ok(value);
             done(assert.notEqual("delay", value));
+        });
+    }
+);
+
+test.only(
+    "try to have a resonable output when errors occur",
+    function (ignore, done) {
+        parseq_extended.parallel([
+            function (c) {
+                const id = setTimeout(function () {
+                    return c(true);
+                }, 0);
+                return function () {
+                    clearTimeout(id);
+                };
+            },
+            parseq_extended.requestorize(function () {return;}, "first"),
+            parseq_extended.requestorize(function () {throw "e";}, "second")
+        ], {throttle: 1, name: "main"})(function (value, reason) {
+            if (value === undefined) {
+                console.log("REASON ", reason);
+            }
+            console.log("VALUE ", value);
+                done(true);
         });
     }
 );

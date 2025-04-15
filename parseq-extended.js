@@ -59,10 +59,10 @@ function check_unary(f, name) {
     }
 }
 
-function requestorize(unary, factory_name = "requestorize") {
-    check_unary(unary, factory_name);
+function requestorize(unary, name = "requestorize") {
+    check_unary(unary, name);
     return function delay_requestor(callback, v) {
-        parseq.check_callback(callback, factory_name);
+        parseq.check_callback(callback, name);
         const id = setTimeout(function (v) {
             let result;
             try {
@@ -71,9 +71,9 @@ function requestorize(unary, factory_name = "requestorize") {
                 return callback(
                     undefined,
                     parseq.make_reason(
-                        factory_name,
+                        name,
                         (
-                            `caught error in ${factory_name} with value `
+                            `caught error in ${name} with value `
                             + `${json_stringify(v).slice(0, 200)}`
                         ),
                         error
@@ -84,7 +84,7 @@ function requestorize(unary, factory_name = "requestorize") {
                 return callback(
                     undefined,
                     parseq.make_reason(
-                        factory_name,
+                        name,
                         "unary function returned undefined",
                         v
                     )
@@ -295,19 +295,19 @@ const is_promise = (p) => typeof p?.then === "function";
 
 function promise_requestorize(
     promise_thunk,
-    action = "executing promise",
+    name = "executing promise",
     cancel = undefined
 ) {
     if (!is_thunk(promise_thunk)) {
         throw parseq.make_reason(
-            action,
-            `Not a thunk when ${action}`,
+            name,
+            `Not a thunk when ${name}`,
             promise_thunk
         );
     }
 
     return function (callback) {
-        parseq.check_callback(callback, action);
+        parseq.check_callback(callback, name);
         let is_called = false;
         function promise_callback(value, reason) {
             if (!is_called) {
@@ -320,7 +320,7 @@ function promise_requestorize(
 
                         parseq.make_reason(
                             "promise_requestorize",
-                            `Failed when ${action}`,
+                            `Failed when ${name}`,
                             reason
                         )
                     );
@@ -331,8 +331,8 @@ function promise_requestorize(
 // second callback call: callback has thrown
 
             throw parseq.make_reason(
-                action,
-                `Callback failed when ${action}`,
+                name,
+                `Callback failed when ${name}`,
                 reason
             );
         }
@@ -341,8 +341,8 @@ function promise_requestorize(
             return promise_callback(
                 undefined,
                 parseq.make_reason(
-                    action,
-                    `Not a promise when ${action}`,
+                    name,
+                    `Not a promise when ${name}`,
                     promise
                 )
             );
@@ -375,8 +375,8 @@ function dynamic_default_import(url) {
     ]);
 }
 
-function factory_maker(requestor, factory_name = "factory") {
-    parseq.check_requestors([requestor], factory_name);
+function factory_maker(requestor, name = "factory") {
+    parseq.check_requestors([requestor], name);
 
 // the adapter combines the online value passed to the requestor with the
 // closure/context in which the factory is executed
@@ -497,7 +497,7 @@ function persist(
 }
 
 function sequence(requestor_array, options = {}) {
-    return parseq.sequence(requestor_array, options?.time_limit);
+    return parseq.sequence(requestor_array, options?.time_limit, options?.name);
 }
 
 function parallel(
@@ -509,7 +509,8 @@ function parallel(
         options?.optional_array,
         options?.time_limit,
         options?.time_option,
-        options?.throttle
+        options?.throttle,
+        options?.name
     );
 }
 
@@ -522,14 +523,16 @@ function parallel_object(
         options?.optional_object,
         options?.time_limit,
         options?.time_option,
-        options?.throttle
+        options?.throttle,
+        options?.name
     );
 }
 
 function fallback(requestor_array, options = {}) {
     return parseq.fallback(
         requestor_array,
-        options?.time_limit
+        options?.time_limit,
+        options?.name
     );
 }
 
@@ -537,7 +540,8 @@ function race(requestor_array, options = {}) {
     return parseq.race(
         requestor_array,
         options?.time_limit,
-        options?.throttle
+        options?.throttle,
+        options?.name
     );
 }
 
