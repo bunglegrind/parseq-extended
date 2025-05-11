@@ -8,6 +8,7 @@ Differences from the original parseq library:
 1. `check_callback` is exposed through the public interface
 1. `check_requestors` is exposed through the public interface
 1. `start_requestor_callback` doesn't catch exceptions anymore (see #13)
+1. All the factories receive another parameter, factory_name, in order to have more explicit error messages.
 
 # More constraints
 

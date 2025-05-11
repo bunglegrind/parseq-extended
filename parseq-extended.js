@@ -59,7 +59,8 @@ function check_unary(f, name) {
     }
 }
 
-function requestorize(unary, name = "requestorize") {
+function requestorize(unary, name = ".") {
+    name = name + ".requestorize";
     check_unary(unary, name);
     return function delay_requestor(callback, v) {
         parseq.check_callback(callback, name);

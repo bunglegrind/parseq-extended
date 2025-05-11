@@ -217,15 +217,15 @@ function run(
     return cancel;
 }
 
-// The factories ///////////////////////////////////////////////////////////////
+// Internal function that performs factory duties for parallel and sequence
 
-function parallel(
+function parallel_engine(
     required_array,
     optional_array,
     time_limit,
     time_option,
     throttle,
-    factory_name = "parallel",
+    factory_name,
     sequence = false
 ) {
 
@@ -385,13 +385,34 @@ function parallel(
     };
 }
 
+// The factories ///////////////////////////////////////////////////////////////
+
+function parallel(
+    required_array,
+    optional_array,
+    time_limit,
+    time_option,
+    throttle,
+    factory_name = ""
+) {
+    return parallel_engine(
+        required_array,
+        optional_array,
+        time_limit,
+        time_option,
+        throttle,
+        factory_name + ".parallel",
+        false
+    );
+}
+
 function parallel_object(
     required_object,
     optional_object,
     time_limit,
     time_option,
     throttle,
-    factory_name = "parallel_object"
+    factory_name = ""
 ) {
 
 // 'parallel_object' is similar to 'parallel' except that it takes and
@@ -402,6 +423,8 @@ function parallel_object(
     const names = [];
     let required_array = [];
     let optional_array = [];
+
+    factory_name += "parallel_object";
 
 // Extract the names and requestors from 'required_object'.
 // We only collect functions with an arity of 1 or 2.
@@ -493,14 +516,17 @@ function parallel_object(
     };
 }
 
-function race(requestor_array, time_limit, throttle, factory_name = "race") {
+function race(requestor_array, time_limit, throttle, factory_name = "") {
 
 // The 'race' factory returns a requestor that starts all of the
 // requestors in 'requestor_array' at wunce. The first success wins.
 
-    if (throttle === 1 && factory_name === "race") {
-        factory_name = "fallback";
-    }
+    factory_name += (
+        throttle === 1
+        ? ".fallback"
+        : ".race"
+    );
+
 
     if (get_array_length(requestor_array, factory_name) === 0) {
         throw make_reason(factory_name, "No requestors.");
@@ -548,26 +574,26 @@ function race(requestor_array, time_limit, throttle, factory_name = "race") {
     };
 }
 
-function fallback(requestor_array, time_limit, factory_name = "fallback") {
+function fallback(requestor_array, time_limit, factory_name = "") {
 
 // The 'fallback' factory returns a requestor that tries each requestor
 // in 'requestor_array', wun at a time, until it finds a successful wun.
 
-    return race(requestor_array, time_limit, 1, factory_name);
+    return race(requestor_array, time_limit, 1, factory_name + ".fallback");
 }
 
-function sequence(requestor_array, time_limit, factory_name = "sequence") {
+function sequence(requestor_array, time_limit, factory_name = "") {
 
 // A sequence runs each requestor in order, passing results to the next,
 // as long as they are all successful. A sequence is a throttled parallel.
 
-    return parallel(
+    return parallel_engine(
         requestor_array,
         undefined,
         time_limit,
         undefined,
         1,
-        factory_name,
+        factory_name + ".sequence",
         true
     );
 

@@ -6,11 +6,12 @@
     assign, b, c, constant, create, deepEqual, delay, do_nothing,
     dynamic_default_import, dynamic_import, equal, evidence, f, factory_maker,
     factory_merge, fallback, isArray, keys, length, listeners, make_reason,
-    message, myFlag, notEqual, now, ok, on, only, parallel, parallel_merge,
-    parallel_object, persist, prependListener, promise_requestorize, prop_one,
-    prop_two, prop_zero, push, q, race, reason, reduce, removeAllListeners,
-    removeListener, requestorize, sample, sequence, signal, tap, time_limit,
-    toString, v, value, w, when, wrap_reason, z
+    message, myFlag, name, notEqual, now, ok, on, only, parallel,
+    parallel_merge, parallel_object, persist, prependListener,
+    promise_requestorize, prop_one, prop_two, prop_zero, push, q, race, reason,
+    reduce, removeAllListeners, removeListener, requestorize, sample, sequence,
+    signal, tap, throttle, time_limit, toString, v, value, w, when, wrap_reason,
+    z
 */
 
 import process from "node:process";
@@ -136,7 +137,7 @@ test(
             assert.ok(value === undefined);
             done(assert.equal(
                 reason.message,
-                "parseq.requestorize: unary function returned undefined"
+                "parseq...requestorize: unary function returned undefined"
             ));
         });
     }
@@ -300,7 +301,7 @@ test("Map timeouts to a failing race", function (ignore, done) {
         assert.equal(value, undefined, "nobody should win");
         assert.equal(
             reason.toString(),
-            "Error: parseq.race: Timeout.",
+            "Error: parseq..race: Timeout.",
             "time_limit reached"
         );
         assert.equal(reason.evidence, 100, "time_limit");
@@ -951,26 +952,32 @@ test(
     }
 );
 
-test.only(
-    "try to have a resonable output when errors occur",
+test(
+    "Error messages show factory stack",
     function (ignore, done) {
-        parseq_extended.parallel([
-            function (c) {
-                const id = setTimeout(function () {
-                    return c(true);
-                }, 0);
-                return function () {
-                    clearTimeout(id);
-                };
-            },
-            parseq_extended.requestorize(function () {return;}, "first"),
-            parseq_extended.requestorize(function () {throw "e";}, "second")
-        ], {throttle: 1, name: "main"})(function (value, reason) {
-            if (value === undefined) {
-                console.log("REASON ", reason);
-            }
-            console.log("VALUE ", value);
-                done(true);
+        parseq_extended.sequence([
+            parseq_extended.parallel([
+                function (c) {
+                    const id = setTimeout(function () {
+                        return c(true);
+                    }, 0);
+                    return function () {
+                        clearTimeout(id);
+                    };
+                },
+                parseq_extended.requestorize(function () {
+                    return;
+                }, "first"),
+                parseq_extended.requestorize(function () {
+                    throw "e";
+                }, "second")
+            ], {throttle: 1, name: "main"})
+        ])(function (value, reason) {
+            assert.equal(value, undefined);
+            done(assert.equal(
+                reason.message,
+                "parseq.first.requestorize: unary function returned undefined"
+            ));
         });
     }
 );
