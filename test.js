@@ -3,15 +3,15 @@
 */
 /*property
     a, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
-    assign, b, c, constant, create, deepEqual, delay, do_nothing,
+    assign, b, c, constant, create, deepEqual, delay, do_nothing, do_while,
     dynamic_default_import, dynamic_import, equal, evidence, f, factory_maker,
-    factory_merge, fallback, isArray, keys, length, listeners, make_reason,
-    message, myFlag, name, notEqual, now, ok, on, only, parallel,
-    parallel_merge, parallel_object, persist, prependListener,
+    factory_merge, fallback, initial_value, isArray, keys, length,
+    listeners, make_reason, message, myFlag, name, notEqual, now, ok, on, only,
+    parallel, parallel_merge, parallel_object, persist, prependListener,
     promise_requestorize, prop_one, prop_two, prop_zero, push, q, race, reason,
-    reduce, removeAllListeners, removeListener, requestorize, sample, sequence,
-    signal, tap, throttle, time_limit, toString, v, value, w, when, wrap_reason,
-    z
+    reduce, reducer, removeAllListeners, removeListener, requestorize, sample,
+    sequence, signal, tap, test_condition, throttle, time_limit, toString, v,
+    value, w, when, wrap_reason, z
 */
 
 import process from "node:process";
@@ -978,6 +978,28 @@ test(
                 reason.message,
                 "parseq.first.requestorize: unary function returned undefined"
             ));
+        });
+    }
+);
+
+test.only(
+    "Perform an infinite sequence of async operation",
+    function (ignore, done) {
+        let counter = 0;
+        parseq_extended.do_while(
+            parseq_extended.requestorize(function () {
+                counter += 1;
+                return counter;
+            }).
+            {
+                initial_value: 0,
+                reducer: (acc, i) => acc + i,
+                test_condition: (ignore, i) => i < 1000,
+                name: "test do-while"
+            }
+        )(function (value, reason) {
+            assert(value !== undefined, reason);
+            done(assert.equal(value, 999 * 500));
         });
     }
 );

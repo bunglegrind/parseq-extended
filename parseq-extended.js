@@ -481,6 +481,29 @@ function reduce(
     ]);
 }
 
+function do_while(
+    requestor,
+    {initial_value, initial_output, reducer, test_condition, name}
+) {
+    return parseq.sequence([
+        requestor,
+        parseq_extended.requestorize(
+        if_else(
+            test_condition,
+            (callback, {acc, value}) => do_while(
+                requestor,
+                {
+                    initial_value: acc,
+                    test_condition,
+                    name
+                }
+
+            )(callback, value)
+
+
+
+}
+
 function persist(
     requestor,
     tentatives,
@@ -574,5 +597,6 @@ export default Object.freeze({
     try_catcher,
     tap,
     reduce,
-    persist
+    persist,
+    do_while
 });
