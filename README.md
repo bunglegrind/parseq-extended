@@ -43,6 +43,7 @@ The _others_ category denotes functions which, given some parameters, return a r
 - `tap`: Just like Ramda's tap, executes the requestor and returns the same input value, discarding requestor output.
 - `parallel_merge`: Shortcut to `parallel_object`, it enriches the input value with the results of the requestor object output.
 - `reduce`: Works similarly to `Array.prototype.reduce`.
+- `do_while`: Execute many times the requestor as far as the test condition stays true.
 - `delay`: Given a requestor returns a new requestor which is executed at a fixed delay
 - `persist`: Given a requestor, returns a new requestor which persists for n tentatives to successfully execute the requestor, possibly delayed by a time_delay
 

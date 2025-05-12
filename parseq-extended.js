@@ -7,13 +7,14 @@
 /*property
     adapters, apply_fallback, apply_parallel, apply_parallel_object, apply_race,
     assign, catch, check_callback, check_requestors, constant, create, default,
-    delay, do_nothing, dynamic_default_import, dynamic_import, evidence,
-    factory_maker, fallback, fill, forEach, freeze, if_else, isArray, keys,
-    length, make_reason, make_requestor_factory, map, name, obj_factories,
+    delay, do_nothing, do_while, dynamic_default_import, dynamic_import,
+    evidence, factory_maker, fallback, fill, forEach, freeze, if_else, isArray,
+    keys, length, make_reason, make_requestor_factory, map, name, obj_factories,
     optional_array, optional_object, optional_requestor_factory, parallel,
     parallel_merge, parallel_object, persist, promise_requestorize, race,
-    reason, reduce, requestorize, sequence, slice, stringify, tap, then,
-    throttle, time_limit, time_option, try_catcher, value, when, wrap_reason
+    reason, reduce, requestorize, sequence, slice, stringify, tap,
+    test_condition, then, throttle, time_limit, time_option, try_catcher, value,
+    when, wrap_reason
 */
 
 import parseq from "./parseq.js";
@@ -483,25 +484,17 @@ function reduce(
 
 function do_while(
     requestor,
-    {initial_value, initial_output, reducer, test_condition, name}
+    {test_condition, name}
 ) {
     return parseq.sequence([
         requestor,
-        parseq_extended.requestorize(
         if_else(
             test_condition,
-            (callback, {acc, value}) => do_while(
-                requestor,
-                {
-                    initial_value: acc,
-                    test_condition,
-                    name
-                }
-
-            )(callback, value)
-
-
-
+            (c, v) => do_while(requestor, {test_condition, name})(c, v),
+            do_nothing,
+            name
+        )
+    ]);
 }
 
 function persist(

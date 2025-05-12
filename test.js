@@ -982,7 +982,7 @@ test(
     }
 );
 
-test.only(
+test(
     "Perform an infinite sequence of async operation",
     function (ignore, done) {
         let counter = 0;
@@ -990,16 +990,14 @@ test.only(
             parseq_extended.requestorize(function () {
                 counter += 1;
                 return counter;
-            }).
+            }),
             {
-                initial_value: 0,
-                reducer: (acc, i) => acc + i,
-                test_condition: (ignore, i) => i < 1000,
+                test_condition: (i) => i < 100,
                 name: "test do-while"
             }
         )(function (value, reason) {
             assert(value !== undefined, reason);
-            done(assert.equal(value, 999 * 500));
+            done(assert.equal(value, 100));
         });
     }
 );
